@@ -4,6 +4,7 @@ import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useTransactions } from "@/hooks/use-transactions";
@@ -212,10 +213,9 @@ export function TransactionModal({ open, onOpenChange }: TransactionModalProps) 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1">Rekening</label>
-                  <select
+                  <Select
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-sm focus:outline-none focus:border-zinc-950"
                   >
                     {accounts.length === 0 && <option value="">Belum ada rekening</option>}
                     {accounts.map((acc) => (
@@ -223,15 +223,14 @@ export function TransactionModal({ open, onOpenChange }: TransactionModalProps) 
                         {acc.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1">Kategori</label>
-                  <select
+                  <Select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-sm focus:outline-none focus:border-zinc-950"
                   >
                     {filteredCategories.length === 0 && <option value="">Belum ada kategori</option>}
                     {filteredCategories.map((cat) => (
@@ -239,7 +238,7 @@ export function TransactionModal({ open, onOpenChange }: TransactionModalProps) 
                         {cat.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
@@ -272,32 +271,30 @@ export function TransactionModal({ open, onOpenChange }: TransactionModalProps) 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1">Dari Rekening</label>
-                  <select
+                  <Select
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-sm focus:outline-none focus:border-zinc-950"
                   >
                     {accounts.map((acc) => (
                       <option key={acc.id} value={acc.id}>
                         {acc.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1">Ke Rekening</label>
-                  <select
+                  <Select
                     value={toAccountId}
                     onChange={(e) => setToAccountId(e.target.value)}
-                    className="w-full h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-sm focus:outline-none focus:border-zinc-950"
                   >
                     {accounts.map((acc) => (
                       <option key={acc.id} value={acc.id}>
                         {acc.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
 

@@ -7,7 +7,8 @@ import { useCategories } from "@/hooks/use-categories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatRupiah } from "@/lib/utils";
 import { format } from "date-fns";
@@ -79,22 +80,24 @@ export default function TransactionsPage() {
           </div>
 
           {/* Type dropdown */}
-          <select
+          <Select
             value={type}
-            onChange={(e) => setType(e.target.value as any)}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-950"
+            onChange={(e) => setType(e.target.value as "INCOME" | "EXPENSE" | "TRANSFER" | "")}
+            wrapperClassName="w-auto min-w-[150px]"
+            className="h-9 text-xs"
           >
             <option value="">Semua Tipe Transaksi</option>
             <option value="EXPENSE">Pengeluaran</option>
             <option value="INCOME">Pemasukan</option>
             <option value="TRANSFER">Transfer</option>
-          </select>
+          </Select>
 
           {/* Account dropdown */}
-          <select
+          <Select
             value={accountId}
             onChange={(e) => setAccountId(e.target.value)}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-950"
+            wrapperClassName="w-auto min-w-[150px]"
+            className="h-9 text-xs"
           >
             <option value="">Semua Rekening</option>
             {accounts.map((acc) => (
@@ -102,13 +105,14 @@ export default function TransactionsPage() {
                 {acc.name}
               </option>
             ))}
-          </select>
+          </Select>
 
           {/* Category dropdown */}
-          <select
+          <Select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-950"
+            wrapperClassName="w-auto min-w-[150px]"
+            className="h-9 text-xs"
           >
             <option value="">Semua Kategori</option>
             {categories.map((cat) => (
@@ -116,7 +120,7 @@ export default function TransactionsPage() {
                 {cat.name} ({cat.type === "INCOME" ? "Masuk" : "Keluar"})
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Second row of filters & reset */}

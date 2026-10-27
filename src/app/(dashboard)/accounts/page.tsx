@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { useAccounts } from "@/hooks/use-accounts";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatRupiah, parseRupiahInput } from "@/lib/utils";
@@ -218,16 +219,15 @@ export default function AccountsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block font-medium text-zinc-700 mb-1">Tipe Rekening</label>
-                <select
+                <Select
                   value={type}
-                  onChange={(e) => setType(e.target.value as any)}
-                  className="w-full h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-xs focus:outline-none focus:border-zinc-950"
+                  onChange={(e) => setType(e.target.value as "BANK" | "EWALLET" | "CASH" | "CREDIT_CARD")}
                 >
                   <option value="BANK">Bank</option>
                   <option value="EWALLET">E-Wallet</option>
                   <option value="CASH">Tunai (Cash)</option>
                   <option value="CREDIT_CARD">Kartu Kredit</option>
-                </select>
+                </Select>
               </div>
 
               <div>
