@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { formatRupiah } from "@/lib/utils";
 import { ArrowDownLeft, ArrowUpRight, Wallet, EyeOff } from "lucide-react";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useTransactions } from "@/hooks/use-transactions";
+import { useTransactions, TransactionWithDetails } from "@/hooks/use-transactions";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TransactionModal } from "@/components/forms/transaction-modal";
 import { formatRupiah } from "@/lib/utils";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Search, RotateCcw, Trash2 } from "lucide-react";
+import { Search, RotateCcw, Trash2, Pencil } from "lucide-react";
 
 export default function TransactionsPage() {
   const [search, setSearch] = React.useState("");
@@ -22,6 +23,8 @@ export default function TransactionsPage() {
   const [categoryId, setCategoryId] = React.useState("");
   const [minAmount, setMinAmount] = React.useState("");
   const [maxAmount, setMaxAmount] = React.useState("");
+  const [editingTx, setEditingTx] = React.useState<TransactionWithDetails | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
 
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
@@ -232,13 +235,27 @@ export default function TransactionsPage() {
                         {prefix}{formatRupiah(Number(tx.amount))}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleDelete(tx.id)}
-                          className="p-1 rounded text-zinc-400 hover:text-red-700 transition-colors cursor-pointer"
-                          title="Hapus transaksi"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          {!tx.parentTransferId && (
+                            <button
+                              onClick={() => {
+                                setEditingTx(tx);
+                                setIsEditModalOpen(true);
+                              }}
+                              className="p-1 rounded text-zinc-400 hover:text-zinc-950 transition-colors cursor-pointer"
+                              title="Edit transaksi"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete(tx.id)}
+                            className="p-1 rounded text-zinc-400 hover:text-red-700 transition-colors cursor-pointer"
+                            title="Hapus transaksi"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -295,13 +312,27 @@ export default function TransactionsPage() {
                         {prefix}{formatRupiah(Number(tx.amount))}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(tx.id)}
-                      className="p-1 rounded text-zinc-400 hover:text-red-700 transition-colors"
-                      title="Hapus"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {!tx.parentTransferId && (
+                        <button
+                          onClick={() => {
+                            setEditingTx(tx);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="p-1 rounded text-zinc-400 hover:text-zinc-950 transition-colors cursor-pointer"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(tx.id)}
+                        className="p-1 rounded text-zinc-400 hover:text-red-700 transition-colors cursor-pointer"
+                        title="Hapus"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -309,6 +340,16 @@ export default function TransactionsPage() {
           </div>
         </Card>
       )}
+
+      {/* Edit Modal */}
+      <TransactionModal
+        open={isEditModalOpen}
+        onOpenChange={(open) => {
+          setIsEditModalOpen(open);
+          if (!open) setEditingTx(null);
+        }}
+        transactionToEdit={editingTx}
+      />
     </div>
   );
 }

@@ -84,3 +84,71 @@ export const transactionFilterSchema = z.object({
 });
 
 export type TransactionFilterParams = z.infer<typeof transactionFilterSchema>;
+
+// Skema Transaksi Berulang
+export const recurringFrequencySchema = z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
+export type RecurringFrequency = z.infer<typeof recurringFrequencySchema>;
+
+export const recurringFormSchema = z
+  .object({
+    type: transactionTypeSchema,
+    amount: z.coerce.number().int("Nominal harus bilangan bulat").positive("Nominal harus lebih dari 0"),
+    accountId: z.string().uuid("Rekening asal tidak valid"),
+    toAccountId: z.string().uuid("Rekening tujuan tidak valid").optional().nullable(),
+    categoryId: z.string().uuid("Kategori tidak valid").optional().nullable(),
+    note: z.string().max(255, "Catatan maksimal 255 karakter").optional().nullable(),
+    frequency: recurringFrequencySchema,
+    startDate: z.coerce.date(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "TRANSFER") {
+      if (!data.toAccountId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Rekening tujuan wajib dipilih untuk transfer",
+          path: ["toAccountId"],
+        });
+      }
+      if (data.accountId && data.toAccountId && data.accountId === data.toAccountId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Rekening tujuan tidak boleh sama dengan rekening asal",
+          path: ["toAccountId"],
+        });
+      }
+    } else {
+      if (!data.categoryId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Kategori wajib dipilih",
+          path: ["categoryId"],
+        });
+      }
+    }
+  });
+
+export type RecurringFormValues = z.infer<typeof recurringFormSchema>;
+
+// Skema Hutang & Piutang
+export const debtTypeSchema = z.enum(["DEBT", "LOAN"]);
+export type DebtType = z.infer<typeof debtTypeSchema>;
+
+export const debtFormSchema = z.object({
+  type: debtTypeSchema,
+  personName: z.string().min(1, "Nama orang wajib diisi").max(100, "Nama maksimal 100 karakter"),
+  amount: z.coerce.number().int("Nominal harus bilangan bulat").positive("Nominal harus lebih dari 0"),
+  dueDate: z.coerce.date().optional().nullable(),
+  note: z.string().max(255, "Catatan maksimal 255 karakter").optional().nullable(),
+});
+
+export type DebtFormValues = z.infer<typeof debtFormSchema>;
+
+// Skema Pembayaran / Cicilan Hutang & Piutang
+export const debtPaymentFormSchema = z.object({
+  amount: z.coerce.number().int("Nominal harus bilangan bulat").positive("Nominal pembayaran harus lebih dari 0"),
+  accountId: z.string().uuid("Rekening tidak valid").optional().nullable(),
+  date: z.coerce.date(),
+  note: z.string().max(255, "Catatan maksimal 255 karakter").optional().nullable(),
+});
+
+export type DebtPaymentFormValues = z.infer<typeof debtPaymentFormSchema>;

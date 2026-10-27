@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, Repeat, HandCoins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
-
-import { Logo } from "@/components/ui/logo";
 
 interface User {
   id?: string;
@@ -26,6 +24,8 @@ const navItems = [
   { label: "Transaksi", href: "/transactions", icon: ArrowLeftRight },
   { label: "Rekening", href: "/accounts", icon: Landmark },
   { label: "Kategori", href: "/categories", icon: Tags },
+  { label: "Berulang", href: "/recurring", icon: Repeat },
+  { label: "Hutang Piutang", href: "/debts", icon: HandCoins },
 ];
 
 export function Sidebar({ user, onOpenQuickEntry }: SidebarProps) {

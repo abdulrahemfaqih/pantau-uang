@@ -102,6 +102,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = transactionFormSchema.parse(body);
 
+    if (validated.type !== "TRANSFER" && validated.categoryId) {
+      const cat = await db.query.categories.findFirst({
+        where: eq(categories.id, validated.categoryId),
+      });
+      if (cat && cat.type !== validated.type) {
+        return NextResponse.json(
+          { message: "Tipe kategori tidak sesuai dengan tipe transaksi" },
+          { status: 400 }
+        );
+      }
+    }
+
     const result = await db.transaction(async (tx) => {
       // 1. EXPENSE
       if (validated.type === "EXPENSE") {

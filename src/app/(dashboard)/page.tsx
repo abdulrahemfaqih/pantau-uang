@@ -13,13 +13,7 @@ import { id as localeId } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function DashboardPage() {
-  const [currentDate, setCurrentDate] = React.useState<Date>(() => new Date("2026-01-01T00:00:00Z"));
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setCurrentDate(new Date());
-    setMounted(true);
-  }, []);
+  const [currentDate, setCurrentDate] = React.useState<Date>(() => new Date());
 
   const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
