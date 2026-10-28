@@ -5,10 +5,11 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TransactionModal } from "@/components/forms/transaction-modal";
 import { signOut } from "next-auth/react";
-import { LogOut, Wallet } from "lucide-react";
+import { LogOut, Wallet, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchPageData } from "@/lib/prefetch";
+import { GuidedTour } from "@/components/layout/guided-tour";
 
 interface User {
   id?: string;
@@ -24,6 +25,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const [quickEntryOpen, setQuickEntryOpen] = React.useState(false);
+  const [tourForced, setTourForced] = React.useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -36,7 +38,11 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   return (
     <div className="min-h-screen bg-white text-zinc-950 flex flex-col">
       {/* Desktop Sidebar */}
-      <Sidebar user={user} onOpenQuickEntry={() => setQuickEntryOpen(true)} />
+      <Sidebar
+        user={user}
+        onOpenQuickEntry={() => setQuickEntryOpen(true)}
+        onStartTour={() => setTourForced(true)}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 lg:pl-60 flex flex-col">
@@ -49,8 +55,16 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
             <span className="font-bold text-sm tracking-tight text-zinc-950">PantauUang</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-600 truncate max-w-[140px]">
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setTourForced(true)}
+              className="p-1.5 rounded-md text-zinc-500 hover:text-zinc-950 hover:bg-zinc-100 transition-colors cursor-pointer"
+              title="Panduan Menu"
+              aria-label="Panduan Menu"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+            <span className="text-xs text-zinc-600 truncate max-w-[120px]">
               {user.name || user.email}
             </span>
             <button
@@ -75,6 +89,9 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
 
       {/* Quick Entry Modal */}
       <TransactionModal open={quickEntryOpen} onOpenChange={setQuickEntryOpen} />
+
+      {/* Interactive Animated Guided Tour untuk Pengguna Baru */}
+      <GuidedTour forceOpen={tourForced} onClose={() => setTourForced(false)} />
     </div>
   );
 }

@@ -119,6 +119,7 @@ export function BottomNav({ onOpenQuickEntry }: BottomNavProps) {
       {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-zinc-900 px-2 py-1.5 flex items-center justify-around">
         <Link
+          id="tour-dashboard-mobile"
           href="/"
           onMouseEnter={() => prefetchPageData(queryClient, "/")}
           onTouchStart={() => prefetchPageData(queryClient, "/")}
@@ -132,6 +133,7 @@ export function BottomNav({ onOpenQuickEntry }: BottomNavProps) {
         </Link>
 
         <Link
+          id="tour-transactions-mobile"
           href="/transactions"
           onMouseEnter={() => prefetchPageData(queryClient, "/transactions")}
           onTouchStart={() => prefetchPageData(queryClient, "/transactions")}
@@ -147,6 +149,7 @@ export function BottomNav({ onOpenQuickEntry }: BottomNavProps) {
         {/* Prominent Quick Entry Action Button */}
         <div className="flex items-center justify-center px-1">
           <button
+            id="tour-quick-mobile"
             onClick={onOpenQuickEntry}
             className="h-11 w-11 rounded-full bg-zinc-950 text-white flex items-center justify-center shadow-none hover:bg-zinc-800 transition-colors focus:outline-none cursor-pointer"
             aria-label="Catat Transaksi Cepat"
@@ -156,6 +159,7 @@ export function BottomNav({ onOpenQuickEntry }: BottomNavProps) {
         </div>
 
         <Link
+          id="tour-accounts-mobile"
           href="/accounts"
           onMouseEnter={() => prefetchPageData(queryClient, "/accounts")}
           onTouchStart={() => prefetchPageData(queryClient, "/accounts")}
@@ -170,6 +174,7 @@ export function BottomNav({ onOpenQuickEntry }: BottomNavProps) {
 
         {/* Menu Lainnya Button */}
         <button
+          id="tour-more-mobile"
           type="button"
           onClick={() => setMoreMenuOpen((prev) => !prev)}
           className={cn(

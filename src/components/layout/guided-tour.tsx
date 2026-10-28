@@ -1,0 +1,319 @@
+"use client";
+
+import * as React from "react";
+import { ArrowLeft, ArrowRight, Check, X, Compass } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface TourStep {
+  desktopSelector: string;
+  mobileSelector: string;
+  title: string;
+  description: string;
+  actionHint: string;
+}
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    desktopSelector: "#tour-accounts",
+    mobileSelector: "#tour-accounts-mobile",
+    title: "Langkah 1: Rekening Keuangan",
+    description:
+      "Wadah utama untuk menyimpan saldo Anda (seperti Rekening Bank, Dompet Tunai, atau E-Wallet). Mulailah pencatatan dengan membuat rekening pertama Anda di menu ini.",
+    actionHint: "Menu Rekening",
+  },
+  {
+    desktopSelector: "#tour-quick-entry",
+    mobileSelector: "#tour-quick-mobile",
+    title: "Langkah 2: Catat Transaksi Cepat",
+    description:
+      "Tekan tombol tambah (+) ini kapan saja untuk mencatat pengeluaran harian, pemasukan baru, atau transfer saldo antar rekening secara cepat dan praktis.",
+    actionHint: "Tombol Catat Cepat",
+  },
+  {
+    desktopSelector: "#tour-dashboard",
+    mobileSelector: "#tour-dashboard-mobile",
+    title: "Langkah 3: Dashboard & Arus Kas",
+    description:
+      "Pusat kendali keuangan Anda: memantau total saldo gabungan, arus kas pemasukan dan pengeluaran bulanan, grafik tren, serta pos belanja terbesar.",
+    actionHint: "Menu Dashboard",
+  },
+  {
+    desktopSelector: "#tour-transactions",
+    mobileSelector: "#tour-transactions-mobile",
+    title: "Langkah 4: Riwayat Transaksi Harian",
+    description:
+      "Pantau mutasi keuangan yang dikelompokkan rapi per tanggal, lengkap dengan subtotal pengeluaran harian dan filter pencarian transaksi.",
+    actionHint: "Menu Transaksi",
+  },
+  {
+    desktopSelector: "#tour-more-desktop",
+    mobileSelector: "#tour-more-mobile",
+    title: "Langkah 5: Fitur Otomasi & Pinjaman",
+    description:
+      "Otomatiskan tagihan bulanan rutin di Transaksi Berulang, pantau pinjaman uang di Hutang & Piutang, serta sesuaikan pos anggaran di menu Kategori.",
+    actionHint: "Fitur Tambahan",
+  },
+];
+
+const STORAGE_KEY = "pantauuang_guided_tour_completed";
+
+interface GuidedTourProps {
+  forceOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
+  const [isOpen, setIsOpen] = React.useState<boolean>(false);
+  const [currentStepIndex, setCurrentStepIndex] = React.useState<number>(0);
+  const [targetRect, setTargetRect] = React.useState<DOMRect | null>(null);
+
+  // Sinkronisasi forceOpen saat prop berubah selama render
+  const [prevForceOpen, setPrevForceOpen] = React.useState(forceOpen);
+  if (prevForceOpen !== forceOpen) {
+    setPrevForceOpen(forceOpen);
+    if (forceOpen) {
+      setCurrentStepIndex(0);
+      setIsOpen(true);
+    }
+  }
+
+  // Periksa status kunjungan pertama pengguna (hanya saat mount awal)
+  React.useEffect(() => {
+    const isCompleted = localStorage.getItem(STORAGE_KEY) === "true";
+    if (!isCompleted) {
+      // Berikan jeda 700ms agar layout selesai render sebelum tour dimulai
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Update posisi spotlight saat step berubah atau window resize/scroll
+  const updateTargetPosition = React.useCallback(() => {
+    if (!isOpen) return;
+
+    const isDesktop = window.innerWidth >= 1024;
+    const currentStep = TOUR_STEPS[currentStepIndex];
+    const selector = isDesktop ? currentStep.desktopSelector : currentStep.mobileSelector;
+    const element = document.querySelector(selector);
+
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      setTargetRect(rect);
+    } else {
+      setTargetRect(null);
+    }
+  }, [isOpen, currentStepIndex]);
+
+  React.useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      updateTargetPosition();
+    });
+
+    const handleResizeOrScroll = () => {
+      updateTargetPosition();
+    };
+
+    window.addEventListener("resize", handleResizeOrScroll);
+    window.addEventListener("scroll", handleResizeOrScroll, true);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", handleResizeOrScroll);
+      window.removeEventListener("scroll", handleResizeOrScroll, true);
+    };
+  }, [updateTargetPosition]);
+
+  const handleNext = () => {
+    if (currentStepIndex < TOUR_STEPS.length - 1) {
+      setCurrentStepIndex((prev) => prev + 1);
+    } else {
+      handleComplete();
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex((prev) => prev - 1);
+    }
+  };
+
+  const handleComplete = () => {
+    localStorage.setItem(STORAGE_KEY, "true");
+    setIsOpen(false);
+    onClose?.();
+  };
+
+  if (!isOpen) return null;
+
+  const currentStep = TOUR_STEPS[currentStepIndex];
+  const isLastStep = currentStepIndex === TOUR_STEPS.length - 1;
+
+  // Hitung posisi popover kartu panduan
+  let popoverTop = 0;
+  let popoverLeft = 0;
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+
+  if (targetRect) {
+    if (isDesktop) {
+      // Di desktop (sidebar di kiri), tampilkan popover di sebelah kanan target
+      popoverLeft = Math.min(targetRect.right + 20, window.innerWidth - 340);
+      popoverTop = Math.max(20, Math.min(targetRect.top - 20, window.innerHeight - 240));
+    } else {
+      // Di mobile (bottom nav di bawah), posisikan popover di atas target
+      popoverLeft = 16;
+      popoverTop = Math.max(20, targetRect.top - 230);
+    }
+  } else {
+    // Fallback tengah layar jika elemen belum ditemukan
+    popoverLeft = 20;
+    popoverTop = 100;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 pointer-events-auto select-none" role="dialog" aria-modal="true">
+      {/* SVG Spotlight Mask Overlay */}
+      <svg className="fixed inset-0 w-full h-full pointer-events-none transition-all duration-300">
+        <defs>
+          <mask id="tour-spotlight-mask">
+            <rect width="100%" height="100%" fill="white" />
+            {targetRect && (
+              <rect
+                x={targetRect.left - 6}
+                y={targetRect.top - 6}
+                width={targetRect.width + 12}
+                height={targetRect.height + 12}
+                rx="8"
+                fill="black"
+                className="transition-all duration-300 ease-in-out"
+              />
+            )}
+          </mask>
+        </defs>
+        <rect
+          width="100%"
+          height="100%"
+          fill="rgba(0, 0, 0, 0.65)"
+          mask="url(#tour-spotlight-mask)"
+          className="pointer-events-auto"
+          onClick={handleNext}
+        />
+      </svg>
+
+      {/* Animated Spotlight Border Box */}
+      {targetRect && (
+        <div
+          className="fixed pointer-events-none border-2 border-white rounded-md transition-all duration-300 ease-in-out shadow-sm"
+          style={{
+            left: `${targetRect.left - 6}px`,
+            top: `${targetRect.top - 6}px`,
+            width: `${targetRect.width + 12}px`,
+            height: `${targetRect.height + 12}px`,
+          }}
+        >
+          {/* Subtle Corner Indicator */}
+          <span className="absolute -top-2.5 -right-2.5 flex h-5 w-5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-5 w-5 bg-zinc-950 text-white text-[10px] font-bold items-center justify-center border border-white">
+              {currentStepIndex + 1}
+            </span>
+          </span>
+        </div>
+      )}
+
+      {/* Guided Card Popover */}
+      <div
+        className="fixed z-50 bg-white text-zinc-950 border border-zinc-900 rounded-md p-4 sm:p-5 shadow-none w-[calc(100vw-32px)] sm:w-80 transition-all duration-300 ease-in-out"
+        style={{
+          left: `${popoverLeft}px`,
+          top: `${popoverTop}px`,
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 pb-2 border-b border-zinc-200">
+          <div className="flex items-center gap-2">
+            <span className="h-5 w-5 rounded bg-zinc-950 text-white flex items-center justify-center text-[10px] font-bold">
+              <Compass className="h-3 w-3" />
+            </span>
+            <span className="text-xs font-semibold text-zinc-950 uppercase tracking-tight">
+              Panduan Menu ({currentStepIndex + 1}/{TOUR_STEPS.length})
+            </span>
+          </div>
+
+          <button
+            onClick={handleComplete}
+            className="p-1 rounded text-zinc-400 hover:text-zinc-950 hover:bg-zinc-100 transition-colors cursor-pointer"
+            title="Lewati Panduan"
+            aria-label="Lewati Panduan"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="pt-3">
+          <h3 className="text-sm font-bold text-zinc-950 tracking-tight">
+            {currentStep.title}
+          </h3>
+          <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed">
+            {currentStep.description}
+          </p>
+
+          <div className="mt-2 text-[11px] font-semibold text-zinc-800 bg-zinc-100 px-2 py-1 rounded inline-block">
+            Sorotan: {currentStep.actionHint}
+          </div>
+        </div>
+
+        {/* Dots Step Indicator */}
+        <div className="flex items-center justify-between pt-4 mt-3 border-t border-zinc-200">
+          <div className="flex items-center gap-1.5">
+            {TOUR_STEPS.map((_, idx) => (
+              <span
+                key={idx}
+                className={`h-1.5 rounded-full transition-all duration-200 ${
+                  idx === currentStepIndex
+                    ? "w-4 bg-zinc-950"
+                    : "w-1.5 bg-zinc-300"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {currentStepIndex > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrev}
+                className="h-8 px-2.5 text-xs border-zinc-300 hover:bg-zinc-100 text-zinc-800"
+              >
+                <ArrowLeft className="h-3 w-3 mr-1" />
+                <span>Balik</span>
+              </Button>
+            )}
+
+            <Button
+              size="sm"
+              onClick={handleNext}
+              className="h-8 px-3 text-xs bg-zinc-950 text-white hover:bg-zinc-800 flex items-center gap-1"
+            >
+              {isLastStep ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Selesai</span>
+                </>
+              ) : (
+                <>
+                  <span>Lanjut</span>
+                  <ArrowRight className="h-3 w-3" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, Repeat, HandCoins } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, Repeat, HandCoins, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
@@ -19,6 +19,7 @@ interface User {
 interface SidebarProps {
   user?: User;
   onOpenQuickEntry: () => void;
+  onStartTour?: () => void;
 }
 
 const navItems = [
@@ -30,7 +31,7 @@ const navItems = [
   { label: "Hutang Piutang", href: "/debts", icon: HandCoins },
 ];
 
-export function Sidebar({ user, onOpenQuickEntry }: SidebarProps) {
+export function Sidebar({ user, onOpenQuickEntry, onStartTour }: SidebarProps) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
 
@@ -49,6 +50,7 @@ export function Sidebar({ user, onOpenQuickEntry }: SidebarProps) {
       {/* Action CTA */}
       <div className="p-4">
         <Button
+          id="tour-quick-entry"
           onClick={onOpenQuickEntry}
           className="w-full flex items-center justify-center gap-2 bg-zinc-950 text-white hover:bg-zinc-800"
         >
@@ -62,9 +64,21 @@ export function Sidebar({ user, onOpenQuickEntry }: SidebarProps) {
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
+          const tourId =
+            item.href === "/"
+              ? "tour-dashboard"
+              : item.href === "/transactions"
+              ? "tour-transactions"
+              : item.href === "/accounts"
+              ? "tour-accounts"
+              : item.href === "/categories"
+              ? "tour-more-desktop"
+              : undefined;
+
           return (
             <Link
               key={item.href}
+              id={tourId}
               href={item.href}
               onMouseEnter={() => prefetchPageData(queryClient, item.href)}
               onFocus={() => prefetchPageData(queryClient, item.href)}
@@ -94,13 +108,26 @@ export function Sidebar({ user, onOpenQuickEntry }: SidebarProps) {
                 {user.email}
               </p>
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-950 hover:bg-zinc-200 transition-colors cursor-pointer shrink-0"
-              title="Keluar (Logout)"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              {onStartTour && (
+                <button
+                  onClick={onStartTour}
+                  className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-950 hover:bg-zinc-200 transition-colors cursor-pointer shrink-0"
+                  title="Panduan Menu"
+                  aria-label="Panduan Menu"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-950 hover:bg-zinc-200 transition-colors cursor-pointer shrink-0"
+                title="Keluar (Logout)"
+                aria-label="Keluar"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
