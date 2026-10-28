@@ -212,12 +212,9 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
             height: `${targetRect.height + 12}px`,
           }}
         >
-          {/* Subtle Corner Indicator */}
-          <span className="absolute -top-2.5 -right-2.5 flex h-5 w-5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-5 w-5 bg-zinc-950 text-white text-[10px] font-bold items-center justify-center border border-white">
-              {currentStepIndex + 1}
-            </span>
+          {/* Corner Number Badge (Solid tanpa animasi pulse) */}
+          <span className="absolute -top-2.5 -right-2.5 h-5 w-5 rounded-full bg-zinc-950 text-white text-[10px] font-bold flex items-center justify-center border border-white">
+            {currentStepIndex + 1}
           </span>
         </div>
       )}
