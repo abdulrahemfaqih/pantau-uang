@@ -91,20 +91,6 @@ function TransactionForm({
     return otherAccount?.id || accounts[1]?.id || "";
   }, [accounts, toAccountId, selectedAccountId]);
 
-  // Sinkronisasi state saat data accounts selesai dimuat
-  React.useEffect(() => {
-    if (!accountId && accounts.length > 0) {
-      setAccountId(accounts[0].id);
-    }
-  }, [accounts, accountId]);
-
-  React.useEffect(() => {
-    if (!toAccountId && accounts.length > 1) {
-      const otherAccount = accounts.find((a) => a.id !== accountId);
-      setToAccountId(otherAccount?.id || accounts[1].id);
-    }
-  }, [accounts, toAccountId, accountId]);
-
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
     const parsed = parseRupiahInput(rawVal);
