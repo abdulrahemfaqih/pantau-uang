@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/current-user";
 import { db } from "@/db";
-import { accounts, debtPayments, debts, transactions } from "@/db/schema";
+import { accounts, categories, debtPayments, debts, transactions } from "@/db/schema";
 import { debtPaymentFormSchema } from "@/lib/validations";
 import { and, eq, sql } from "drizzle-orm";
 
@@ -86,6 +86,34 @@ export async function POST(
             })
             .where(eq(accounts.id, validated.accountId));
 
+          // Cari atau buat otomatis kategori "Hutang"
+          let [hutangCategory] = await tx
+            .select()
+            .from(categories)
+            .where(
+              and(
+                eq(categories.userId, userId),
+                eq(categories.name, "Hutang"),
+                eq(categories.type, "EXPENSE")
+              )
+            )
+            .limit(1);
+
+          if (!hutangCategory) {
+            const [createdHutang] = await tx
+              .insert(categories)
+              .values({
+                userId,
+                name: "Hutang",
+                type: "EXPENSE",
+                color: "#71717A",
+                icon: "Tag",
+                isSystem: true,
+              })
+              .returning();
+            hutangCategory = createdHutang;
+          }
+
           await tx.insert(transactions).values({
             userId,
             type: "EXPENSE",
@@ -95,7 +123,7 @@ export async function POST(
               ? `Pembayaran hutang ke ${targetDebt.personName} (${validated.note})`
               : `Pembayaran hutang ke ${targetDebt.personName}`,
             accountId: validated.accountId,
-            categoryId: null,
+            categoryId: hutangCategory?.id || null,
           });
         } else if (targetDebt.type === "LOAN") {
           // Piutang saya: orang lain membayar uang ke kita (INCOME)
@@ -106,6 +134,34 @@ export async function POST(
             })
             .where(eq(accounts.id, validated.accountId));
 
+          // Cari atau buat otomatis kategori "Piutang"
+          let [piutangCategory] = await tx
+            .select()
+            .from(categories)
+            .where(
+              and(
+                eq(categories.userId, userId),
+                eq(categories.name, "Piutang"),
+                eq(categories.type, "INCOME")
+              )
+            )
+            .limit(1);
+
+          if (!piutangCategory) {
+            const [createdPiutang] = await tx
+              .insert(categories)
+              .values({
+                userId,
+                name: "Piutang",
+                type: "INCOME",
+                color: "#71717A",
+                icon: "Tag",
+                isSystem: true,
+              })
+              .returning();
+            piutangCategory = createdPiutang;
+          }
+
           await tx.insert(transactions).values({
             userId,
             type: "INCOME",
@@ -115,7 +171,7 @@ export async function POST(
               ? `Pelunasan piutang dari ${targetDebt.personName} (${validated.note})`
               : `Pelunasan piutang dari ${targetDebt.personName}`,
             accountId: validated.accountId,
-            categoryId: null,
+            categoryId: piutangCategory?.id || null,
           });
         }
       }

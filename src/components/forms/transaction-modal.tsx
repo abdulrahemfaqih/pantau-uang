@@ -74,6 +74,37 @@ function TransactionForm({
     return filteredCategories[0]?.id || "";
   }, [activeTab, filteredCategories, categoryId]);
 
+  // Pastikan accountId selalu valid jika accounts sudah termuat
+  const selectedAccountId = React.useMemo(() => {
+    if (accountId && accounts.some((a) => a.id === accountId)) {
+      return accountId;
+    }
+    return accounts[0]?.id || "";
+  }, [accounts, accountId]);
+
+  // Pastikan toAccountId selalu valid dan berbeda dari accountId untuk transfer
+  const selectedToAccountId = React.useMemo(() => {
+    if (toAccountId && accounts.some((a) => a.id === toAccountId)) {
+      return toAccountId;
+    }
+    const otherAccount = accounts.find((a) => a.id !== selectedAccountId);
+    return otherAccount?.id || accounts[1]?.id || "";
+  }, [accounts, toAccountId, selectedAccountId]);
+
+  // Sinkronisasi state saat data accounts selesai dimuat
+  React.useEffect(() => {
+    if (!accountId && accounts.length > 0) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts, accountId]);
+
+  React.useEffect(() => {
+    if (!toAccountId && accounts.length > 1) {
+      const otherAccount = accounts.find((a) => a.id !== accountId);
+      setToAccountId(otherAccount?.id || accounts[1].id);
+    }
+  }, [accounts, toAccountId, accountId]);
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
     const parsed = parseRupiahInput(rawVal);
@@ -97,17 +128,17 @@ function TransactionForm({
       return;
     }
 
-    if (!accountId) {
+    if (!selectedAccountId) {
       setErrorMsg("Rekening asal wajib dipilih");
       return;
     }
 
     if (activeTab === "TRANSFER") {
-      if (!toAccountId) {
+      if (!selectedToAccountId) {
         setErrorMsg("Rekening tujuan wajib dipilih");
         return;
       }
-      if (accountId === toAccountId) {
+      if (selectedAccountId === selectedToAccountId) {
         setErrorMsg("Rekening tujuan tidak boleh sama dengan rekening asal");
         return;
       }
@@ -124,8 +155,8 @@ function TransactionForm({
         amount,
         date: new Date(date),
         note: note.trim() || undefined,
-        accountId,
-        toAccountId: activeTab === "TRANSFER" ? toAccountId : undefined,
+        accountId: selectedAccountId,
+        toAccountId: activeTab === "TRANSFER" ? selectedToAccountId : undefined,
         categoryId: activeTab !== "TRANSFER" ? selectedCategoryId : undefined,
         adminFee: activeTab === "TRANSFER" ? adminFee : 0,
       };
@@ -231,7 +262,7 @@ function TransactionForm({
               <div>
                 <label className="block text-xs font-medium text-zinc-500 mb-1">Rekening</label>
                 <Select
-                  value={accountId}
+                  value={selectedAccountId}
                   onChange={(e) => setAccountId(e.target.value)}
                 >
                   {accounts.length === 0 && <option value="">Belum ada rekening</option>}
@@ -289,7 +320,7 @@ function TransactionForm({
               <div>
                 <label className="block text-xs font-medium text-zinc-500 mb-1">Dari Rekening</label>
                 <Select
-                  value={accountId}
+                  value={selectedAccountId}
                   onChange={(e) => setAccountId(e.target.value)}
                 >
                   {accounts.map((acc) => (
@@ -303,7 +334,7 @@ function TransactionForm({
               <div>
                 <label className="block text-xs font-medium text-zinc-500 mb-1">Ke Rekening</label>
                 <Select
-                  value={toAccountId}
+                  value={selectedToAccountId}
                   onChange={(e) => setToAccountId(e.target.value)}
                 >
                   {accounts.map((acc) => (

@@ -8,12 +8,14 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   { name: "Tagihan", type: "EXPENSE" as const, color: "#71717A", icon: "Receipt", isSystem: false },
   { name: "Belanja", type: "EXPENSE" as const, color: "#71717A", icon: "ShoppingBag", isSystem: false },
   { name: "Biaya Admin", type: "EXPENSE" as const, color: "#71717A", icon: "Landmark", isSystem: true },
+  { name: "Hutang", type: "EXPENSE" as const, color: "#71717A", icon: "Tag", isSystem: true },
 ];
 
 export const DEFAULT_INCOME_CATEGORIES = [
   { name: "Gaji", type: "INCOME" as const, color: "#71717A", icon: "Briefcase", isSystem: false },
   { name: "Proyek Freelance", type: "INCOME" as const, color: "#71717A", icon: "Laptop", isSystem: false },
   { name: "Bonus", type: "INCOME" as const, color: "#71717A", icon: "Gift", isSystem: false },
+  { name: "Piutang", type: "INCOME" as const, color: "#71717A", icon: "Tag", isSystem: true },
   { name: "Lainnya", type: "INCOME" as const, color: "#71717A", icon: "CircleDollarSign", isSystem: false },
 ];
 
