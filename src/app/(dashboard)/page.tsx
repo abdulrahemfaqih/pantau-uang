@@ -6,7 +6,6 @@ import { StatCards } from "@/components/dashboard/stat-cards";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { CategoryBreakdown } from "@/components/dashboard/category-breakdown";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { AccountsCard } from "@/components/dashboard/accounts-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -71,9 +70,8 @@ export default function DashboardPage() {
             <Skeleton className="lg:col-span-7 h-80 w-full" />
             <Skeleton className="lg:col-span-5 h-80 w-full" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <Skeleton className="lg:col-span-7 h-72 w-full" />
-            <Skeleton className="lg:col-span-5 h-72 w-full" />
+          <div className="w-full">
+            <Skeleton className="h-72 w-full" />
           </div>
         </div>
       ) : error ? (
@@ -102,14 +100,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Bento Grid Row 3: Recent Transactions & Accounts */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-7">
-              <RecentTransactions transactions={data.recentTransactions} />
-            </div>
-            <div className="lg:col-span-5">
-              <AccountsCard accounts={data.accountsSummary} />
-            </div>
+          {/* Bento Grid Row 3: Recent Transactions */}
+          <div className="w-full">
+            <RecentTransactions transactions={data.recentTransactions} />
           </div>
         </div>
       ) : null}
