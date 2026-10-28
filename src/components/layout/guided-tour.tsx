@@ -150,25 +150,53 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
   const currentStep = TOUR_STEPS[currentStepIndex];
   const isLastStep = currentStepIndex === TOUR_STEPS.length - 1;
 
-  // Hitung posisi popover kartu panduan
-  let popoverTop = 0;
-  let popoverLeft = 0;
+  // Hitung posisi popover kartu panduan secara dinamis
   const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+  let popoverStyle: React.CSSProperties = {};
+  let targetLocationHint = "";
 
   if (targetRect) {
     if (isDesktop) {
       // Di desktop (sidebar di kiri), tampilkan popover di sebelah kanan target
-      popoverLeft = Math.min(targetRect.right + 20, window.innerWidth - 340);
-      popoverTop = Math.max(20, Math.min(targetRect.top - 20, window.innerHeight - 240));
+      popoverStyle = {
+        left: `${Math.min(targetRect.right + 20, window.innerWidth - 340)}px`,
+        top: `${Math.max(20, Math.min(targetRect.top - 20, window.innerHeight - 260))}px`,
+        width: "320px",
+      };
     } else {
-      // Di mobile (bottom nav di bawah), posisikan popover di atas target
-      popoverLeft = 16;
-      popoverTop = Math.max(20, targetRect.top - 230);
+      // Di mobile:
+      // Karena target menu berada di bilah navigasi bawah (bottom-nav),
+      // posisikan kartu di bagian ATAS layar agar tidak menutupi menu yang disorot!
+      const isTargetInBottomHalf = targetRect.top > window.innerHeight / 2;
+      if (isTargetInBottomHalf) {
+        popoverStyle = {
+          left: "16px",
+          right: "16px",
+          top: "16px",
+          maxWidth: "400px",
+          margin: "0 auto",
+        };
+        targetLocationHint = "Lihat sorotan menu di bawah ↓";
+      } else {
+        popoverStyle = {
+          left: "16px",
+          right: "16px",
+          bottom: "80px",
+          maxWidth: "400px",
+          margin: "0 auto",
+        };
+        targetLocationHint = "Lihat sorotan menu di atas ↑";
+      }
     }
   } else {
-    // Fallback tengah layar jika elemen belum ditemukan
-    popoverLeft = 20;
-    popoverTop = 100;
+    // Fallback jika elemen belum selesai render
+    popoverStyle = {
+      left: "16px",
+      right: "16px",
+      top: "16px",
+      maxWidth: "400px",
+      margin: "0 auto",
+    };
   }
 
   return (
@@ -204,7 +232,7 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
       {/* Animated Spotlight Border Box */}
       {targetRect && (
         <div
-          className="fixed pointer-events-none border-2 border-white rounded-md transition-all duration-300 ease-in-out shadow-sm"
+          className="fixed pointer-events-none border-2 border-white rounded-md transition-all duration-300 ease-in-out shadow-sm z-50"
           style={{
             left: `${targetRect.left - 6}px`,
             top: `${targetRect.top - 6}px`,
@@ -222,10 +250,7 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
       {/* Guided Card Popover */}
       <div
         className="fixed z-50 bg-white text-zinc-950 border border-zinc-900 rounded-md p-4 sm:p-5 shadow-none w-[calc(100vw-32px)] sm:w-80 transition-all duration-300 ease-in-out"
-        style={{
-          left: `${popoverLeft}px`,
-          top: `${popoverTop}px`,
-        }}
+        style={popoverStyle}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-2 pb-2 border-b border-zinc-200">
@@ -257,8 +282,11 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
             {currentStep.description}
           </p>
 
-          <div className="mt-2 text-[11px] font-semibold text-zinc-800 bg-zinc-100 px-2 py-1 rounded inline-block">
-            Sorotan: {currentStep.actionHint}
+          <div className="mt-2.5 flex items-center justify-between text-[11px] font-semibold text-zinc-800 bg-zinc-100 px-2.5 py-1.5 rounded">
+            <span>Menu: {currentStep.actionHint}</span>
+            {targetLocationHint && (
+              <span className="text-zinc-600 font-medium">{targetLocationHint}</span>
+            )}
           </div>
         </div>
 
