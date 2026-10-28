@@ -9,8 +9,11 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 1000 * 60, // 1 menit
+            staleTime: 1000 * 60 * 5, // 5 menit: data tetap fresh selama navigasi
+            gcTime: 1000 * 60 * 30, // 30 menit: simpan di memori agar perpindahan halaman instan
             refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
+            retry: 1,
           },
         },
       })

@@ -9,6 +9,8 @@ import { LogOut, Menu, X, LayoutDashboard, ArrowLeftRight, Landmark, Tags, Repea
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { prefetchPageData } from "@/lib/prefetch";
 
 interface User {
   id?: string;
@@ -35,6 +37,14 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const [quickEntryOpen, setQuickEntryOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    // Warm up critical cache in the background
+    prefetchPageData(queryClient, "/accounts");
+    prefetchPageData(queryClient, "/categories");
+    prefetchPageData(queryClient, "/transactions");
+  }, [queryClient]);
 
   return (
     <div className="min-h-screen bg-white text-zinc-950 flex flex-col">

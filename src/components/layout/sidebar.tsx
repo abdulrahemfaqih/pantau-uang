@@ -6,6 +6,8 @@ import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { prefetchPageData } from "@/lib/prefetch";
 
 interface User {
   id?: string;
@@ -30,6 +32,7 @@ const navItems = [
 
 export function Sidebar({ user, onOpenQuickEntry }: SidebarProps) {
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
   return (
     <aside className="hidden lg:flex w-60 flex-col border-r border-zinc-200 bg-white min-h-screen fixed left-0 top-0 bottom-0 z-30">
@@ -63,6 +66,8 @@ export function Sidebar({ user, onOpenQuickEntry }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              onMouseEnter={() => prefetchPageData(queryClient, item.href)}
+              onFocus={() => prefetchPageData(queryClient, item.href)}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-colors",
                 isActive

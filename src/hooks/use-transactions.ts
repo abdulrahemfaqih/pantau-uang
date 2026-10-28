@@ -28,6 +28,7 @@ export function useTransactions(filterParams: TransactionFilterParams = {}) {
       }
       return res.json();
     },
+    placeholderData: (previousData) => previousData,
   });
 
   const createTransactionMutation = useMutation({

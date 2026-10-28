@@ -36,5 +36,6 @@ export function useDashboardSummary(month: number, year: number) {
       }
       return res.json();
     },
+    placeholderData: (previousData) => previousData,
   });
 }

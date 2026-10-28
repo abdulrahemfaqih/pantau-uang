@@ -21,31 +21,64 @@ export async function GET(req: NextRequest) {
     const monthDate = new Date(year, month - 1);
     const monthStart = startOfMonth(monthDate);
     const monthEnd = endOfMonth(monthDate);
+    const sixMonthsAgoStart = startOfMonth(subMonths(monthDate, 5));
 
-    // 1. Ambil seluruh rekening pengguna
-    const userAccounts = await db
-      .select()
-      .from(accounts)
-      .where(eq(accounts.userId, userId))
-      .orderBy(desc(accounts.createdAt));
+    // Eksekusi seluruh query secara paralel untuk memangkas latency jaringan
+    const [userAccounts, currentMonthTx, trendTx, recentTransactions] = await Promise.all([
+      // 1. Ambil seluruh rekening pengguna
+      db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.userId, userId))
+        .orderBy(desc(accounts.createdAt)),
+
+      // 2. Transaksi bulan ini (mengecualikan 'TRANSFER')
+      db.query.transactions.findMany({
+        where: and(
+          eq(transactions.userId, userId),
+          gte(transactions.date, monthStart),
+          lte(transactions.date, monthEnd),
+          ne(transactions.type, "TRANSFER")
+        ),
+        with: {
+          category: true,
+        },
+      }),
+
+      // 3. Tren 6 Bulan Terakhir
+      db
+        .select({
+          type: transactions.type,
+          amount: transactions.amount,
+          date: transactions.date,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            gte(transactions.date, sixMonthsAgoStart),
+            lte(transactions.date, monthEnd),
+            ne(transactions.type, "TRANSFER")
+          )
+        ),
+
+      // 4. Transaksi Terbaru (5 item)
+      db.query.transactions.findMany({
+        where: eq(transactions.userId, userId),
+        orderBy: [desc(transactions.date), desc(transactions.createdAt)],
+        limit: 5,
+        with: {
+          account: true,
+          toAccount: true,
+          category: true,
+        },
+      }),
+    ]);
 
     // Total saldo gabungan: HANYA rekening yang excludeFromTotal === false
     const includedAccounts = userAccounts.filter((acc) => !acc.excludeFromTotal);
     const hiddenAccountsCount = userAccounts.filter((acc) => acc.excludeFromTotal).length;
     const totalBalance = includedAccounts.reduce((acc, curr) => acc + Number(curr.currentBalance), 0);
-
-    // 2. Transaksi bulan ini (mengecualikan 'TRANSFER')
-    const currentMonthTx = await db.query.transactions.findMany({
-      where: and(
-        eq(transactions.userId, userId),
-        gte(transactions.date, monthStart),
-        lte(transactions.date, monthEnd),
-        ne(transactions.type, "TRANSFER") // WAJIB mengecualikan transfer
-      ),
-      with: {
-        category: true,
-      },
-    });
 
     let monthlyIncome = 0;
     let monthlyExpense = 0;
@@ -88,24 +121,6 @@ export async function GET(req: NextRequest) {
       }))
       .sort((a, b) => b.total - a.total);
 
-    // 3. Tren 6 Bulan Terakhir
-    const sixMonthsAgoStart = startOfMonth(subMonths(monthDate, 5));
-    const trendTx = await db
-      .select({
-        type: transactions.type,
-        amount: transactions.amount,
-        date: transactions.date,
-      })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.userId, userId),
-          gte(transactions.date, sixMonthsAgoStart),
-          lte(transactions.date, monthEnd),
-          ne(transactions.type, "TRANSFER") // WAJIB mengecualikan transfer
-        )
-      );
-
     // Inisialisasi 6 slot bulan
     const monthlyTrends: Array<{ label: string; income: number; expense: number }> = [];
     for (let i = 5; i >= 0; i--) {
@@ -125,18 +140,6 @@ export async function GET(req: NextRequest) {
         }
       }
     }
-
-    // 4. Transaksi Terbaru (5 item)
-    const recentTransactions = await db.query.transactions.findMany({
-      where: eq(transactions.userId, userId),
-      orderBy: [desc(transactions.date), desc(transactions.createdAt)],
-      limit: 5,
-      with: {
-        account: true,
-        toAccount: true,
-        category: true,
-      },
-    });
 
     return NextResponse.json({
       totalBalance,
