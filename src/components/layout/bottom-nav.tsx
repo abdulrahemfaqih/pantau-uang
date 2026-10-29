@@ -49,28 +49,33 @@ export function BottomNav({
   const isControlled = controlledMoreMenuOpen !== undefined;
   const moreMenuOpen = isControlled ? controlledMoreMenuOpen : internalMoreMenuOpen;
 
+  const moreMenuOpenRef = React.useRef(moreMenuOpen);
+  moreMenuOpenRef.current = moreMenuOpen;
+
+  const onMoreMenuOpenChangeRef = React.useRef(onMoreMenuOpenChange);
+  onMoreMenuOpenChangeRef.current = onMoreMenuOpenChange;
+
   const setMoreMenuOpen = React.useCallback(
     (open: boolean | ((prev: boolean) => boolean)) => {
-      const nextVal = typeof open === "function" ? open(moreMenuOpen) : open;
+      const nextVal = typeof open === "function" ? open(moreMenuOpenRef.current) : open;
       if (!isControlled) {
         setInternalMoreMenuOpen(nextVal);
       }
-      onMoreMenuOpenChange?.(nextVal);
+      onMoreMenuOpenChangeRef.current?.(nextVal);
     },
-    [isControlled, moreMenuOpen, onMoreMenuOpenChange]
+    [isControlled]
   );
 
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { isDriver, toggleDriverMode, isUpdating } = useDriverMode();
 
-  const isFirstRender = React.useRef(true);
+  const prevPathnameRef = React.useRef(pathname);
   React.useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      setMoreMenuOpen(false);
     }
-    setMoreMenuOpen(false);
   }, [pathname, setMoreMenuOpen]);
 
   const isMoreActive = moreNavItems.some((item) => item.href === pathname);
