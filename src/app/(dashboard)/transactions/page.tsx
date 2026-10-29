@@ -11,10 +11,12 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TransactionModal } from "@/components/forms/transaction-modal";
+import { DriverOrderModal } from "@/components/forms/driver-order-modal";
+import { useDriverMode } from "@/hooks/use-driver-mode";
 import { cn, formatRupiah } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Search, RotateCcw, Trash2, Pencil } from "lucide-react";
+import { Search, RotateCcw, Trash2, Pencil, Bike } from "lucide-react";
 
 export default function TransactionsPage() {
   const [search, setSearch] = React.useState("");
@@ -25,7 +27,9 @@ export default function TransactionsPage() {
   const [maxAmount, setMaxAmount] = React.useState("");
   const [editingTx, setEditingTx] = React.useState<TransactionWithDetails | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isDriverModalOpen, setIsDriverModalOpen] = React.useState(false);
 
+  const { isDriver } = useDriverMode();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
 
@@ -123,11 +127,23 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-zinc-200">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Riwayat Transaksi</h1>
           <p className="text-xs text-zinc-500 mt-0.5">Daftar seluruh aktivitas arus kas rekening Anda.</p>
         </div>
+        {isDriver && (
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsDriverModalOpen(true)}
+              variant="outline"
+              className="h-9 text-xs flex items-center gap-1.5 border-zinc-200 hover:bg-zinc-100 text-zinc-950 font-medium"
+            >
+              <Bike className="h-4 w-4" />
+              <span>Order Driver (COD)</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -475,6 +491,12 @@ export default function TransactionsPage() {
           if (!open) setEditingTx(null);
         }}
         transactionToEdit={editingTx}
+      />
+
+      {/* Driver Order Modal */}
+      <DriverOrderModal
+        open={isDriverModalOpen}
+        onOpenChange={setIsDriverModalOpen}
       />
     </div>
   );

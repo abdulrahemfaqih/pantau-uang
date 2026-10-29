@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, Repeat, HandCoins, HelpCircle } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, Repeat, HandCoins, HelpCircle, Bike } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchPageData } from "@/lib/prefetch";
+
+import { useDriverMode } from "@/hooks/use-driver-mode";
 
 interface User {
   id?: string;
@@ -19,6 +21,7 @@ interface User {
 interface SidebarProps {
   user?: User;
   onOpenQuickEntry: () => void;
+  onOpenDriverOrder?: () => void;
   onStartTour?: () => void;
 }
 
@@ -31,9 +34,10 @@ const navItems = [
   { label: "Hutang Piutang", href: "/debts", icon: HandCoins },
 ];
 
-export function Sidebar({ user, onOpenQuickEntry, onStartTour }: SidebarProps) {
+export function Sidebar({ user, onOpenQuickEntry, onOpenDriverOrder, onStartTour }: SidebarProps) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const { isDriver, toggleDriverMode, isUpdating } = useDriverMode();
 
   return (
     <aside className="hidden lg:flex w-60 flex-col border-r border-zinc-200 bg-white min-h-screen fixed left-0 top-0 bottom-0 z-30">
@@ -48,7 +52,7 @@ export function Sidebar({ user, onOpenQuickEntry, onStartTour }: SidebarProps) {
       </div>
 
       {/* Action CTA */}
-      <div className="p-4">
+      <div className="p-4 space-y-2">
         <Button
           id="tour-quick-entry"
           onClick={onOpenQuickEntry}
@@ -57,6 +61,16 @@ export function Sidebar({ user, onOpenQuickEntry, onStartTour }: SidebarProps) {
           <Plus className="h-4 w-4" />
           <span>Catat Transaksi</span>
         </Button>
+        {isDriver && onOpenDriverOrder && (
+          <Button
+            onClick={onOpenDriverOrder}
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2 border-zinc-200 hover:bg-zinc-100 text-zinc-950 text-xs font-medium"
+          >
+            <Bike className="h-3.5 w-3.5" />
+            <span>Order Driver (COD)</span>
+          </Button>
+        )}
       </div>
 
       {/* Navigation Links */}
@@ -95,6 +109,33 @@ export function Sidebar({ user, onOpenQuickEntry, onStartTour }: SidebarProps) {
           );
         })}
       </nav>
+
+      {/* Toggle Mode Driver di Desktop Sidebar */}
+      <div className="px-3 py-2 border-t border-zinc-200">
+        <div className="flex items-center justify-between p-2 rounded-md bg-zinc-50 border border-zinc-200">
+          <div className="flex items-center gap-2 min-w-0">
+            <Bike className="h-3.5 w-3.5 text-zinc-700 shrink-0" />
+            <span className="text-xs font-medium text-zinc-800 truncate">Mode Ojol</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleDriverMode()}
+            disabled={isUpdating}
+            className={cn(
+              "relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer shrink-0",
+              isDriver ? "bg-zinc-950" : "bg-zinc-300"
+            )}
+            aria-label="Toggle Mode Driver"
+          >
+            <span
+              className={cn(
+                "inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform",
+                isDriver ? "translate-x-4.5" : "translate-x-0.5"
+              )}
+            />
+          </button>
+        </div>
+      </div>
 
       {/* User Info & Logout Button */}
       {user && (

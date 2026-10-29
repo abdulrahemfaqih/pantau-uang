@@ -4,6 +4,7 @@ import * as React from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TransactionModal } from "@/components/forms/transaction-modal";
+import { DriverOrderModal } from "@/components/forms/driver-order-modal";
 import { signOut } from "next-auth/react";
 import { LogOut, Wallet, HelpCircle } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +26,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const [quickEntryOpen, setQuickEntryOpen] = React.useState(false);
+  const [driverOrderOpen, setDriverOrderOpen] = React.useState(false);
   const [tourForced, setTourForced] = React.useState(false);
   const queryClient = useQueryClient();
 
@@ -41,6 +43,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       <Sidebar
         user={user}
         onOpenQuickEntry={() => setQuickEntryOpen(true)}
+        onOpenDriverOrder={() => setDriverOrderOpen(true)}
         onStartTour={() => setTourForced(true)}
       />
 
@@ -85,10 +88,16 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <BottomNav onOpenQuickEntry={() => setQuickEntryOpen(true)} />
+      <BottomNav
+        onOpenQuickEntry={() => setQuickEntryOpen(true)}
+        onOpenDriverOrder={() => setDriverOrderOpen(true)}
+      />
 
       {/* Quick Entry Modal */}
       <TransactionModal open={quickEntryOpen} onOpenChange={setQuickEntryOpen} />
+
+      {/* Driver Order Modal */}
+      <DriverOrderModal open={driverOrderOpen} onOpenChange={setDriverOrderOpen} />
 
       {/* Interactive Animated Guided Tour untuk Pengguna Baru */}
       <GuidedTour forceOpen={tourForced} onClose={() => setTourForced(false)} />

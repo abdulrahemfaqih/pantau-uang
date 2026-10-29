@@ -152,3 +152,58 @@ export const debtPaymentFormSchema = z.object({
 });
 
 export type DebtPaymentFormValues = z.infer<typeof debtPaymentFormSchema>;
+
+// Skema Form / API Order Driver (Ojol / COD)
+export const driverOrderFormSchema = z
+  .object({
+    orderNumber: z.string().min(1, "Nomor order atau catatan wajib diisi").max(255, "Catatan maksimal 255 karakter"),
+    driverIncome: z.coerce
+      .number()
+      .int("Nominal pendapatan harus bilangan bulat")
+      .positive("Nominal pendapatan harus lebih dari 0"),
+    codAmount: z.coerce
+      .number()
+      .int("Nominal tagihan COD harus bilangan bulat")
+      .min(0, "Nominal tagihan COD minimal 0")
+      .default(0),
+    date: z.coerce.date(),
+    appAccountId: z.string().uuid("Rekening aplikasi tidak valid"),
+    cashAccountId: z.string().uuid("Rekening tunai tidak valid").optional().nullable(),
+    incomeCategoryId: z.string().uuid("Kategori pendapatan tidak valid"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.codAmount > 0) {
+      if (!data.cashAccountId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Rekening tunai fisik wajib dipilih jika terdapat tagihan COD",
+          path: ["cashAccountId"],
+        });
+      }
+      if (data.cashAccountId && data.cashAccountId === data.appAccountId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Rekening tunai tidak boleh sama dengan rekening aplikasi",
+          path: ["cashAccountId"],
+        });
+      }
+    }
+  });
+
+export type DriverOrderFormValues = z.infer<typeof driverOrderFormSchema>;
+
+// Skema normalisasi payload API Order Driver (mendukung camelCase maupun snake_case)
+export const driverOrderApiSchema = z.preprocess((input) => {
+  if (typeof input !== "object" || input === null) return input;
+  const raw = input as Record<string, unknown>;
+  return {
+    orderNumber: raw.orderNumber ?? raw.order_number ?? raw.notes ?? raw.note,
+    driverIncome: raw.driverIncome ?? raw.driver_income,
+    codAmount: raw.codAmount ?? raw.cod_amount ?? 0,
+    date: raw.date,
+    appAccountId: raw.appAccountId ?? raw.app_account_id,
+    cashAccountId: raw.cashAccountId ?? raw.cash_account_id,
+    incomeCategoryId: raw.incomeCategoryId ?? raw.income_category_id,
+  };
+}, driverOrderFormSchema);
+

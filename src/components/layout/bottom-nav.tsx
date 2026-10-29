@@ -3,13 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, Landmark, MoreHorizontal, Plus, Tags, Repeat, HandCoins, X } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Landmark, MoreHorizontal, Plus, Tags, Repeat, HandCoins, X, Bike } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchPageData } from "@/lib/prefetch";
+import { useDriverMode } from "@/hooks/use-driver-mode";
 
 interface BottomNavProps {
   onOpenQuickEntry: () => void;
+  onOpenDriverOrder?: () => void;
 }
 
 const moreNavItems = [
@@ -33,10 +35,11 @@ const moreNavItems = [
   },
 ];
 
-export function BottomNav({ onOpenQuickEntry }: BottomNavProps) {
+export function BottomNav({ onOpenQuickEntry, onOpenDriverOrder }: BottomNavProps) {
   const [moreMenuOpen, setMoreMenuOpen] = React.useState(false);
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const { isDriver, toggleDriverMode, isUpdating } = useDriverMode();
 
   const [prevPathname, setPrevPathname] = React.useState(pathname);
   if (prevPathname !== pathname) {
@@ -80,6 +83,56 @@ export function BottomNav({ onOpenQuickEntry }: BottomNavProps) {
           </div>
 
           <div className="space-y-2 pt-3">
+            {/* Toggle Mode Driver (Ojol / COD) */}
+            <div className="flex items-center justify-between p-2.5 rounded-md border border-zinc-200 bg-zinc-50">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-md bg-zinc-950 text-white flex items-center justify-center shrink-0">
+                  <Bike className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-zinc-950">Mode Driver (Ojol)</div>
+                  <div className="text-[11px] text-zinc-500">Tampilkan menu order & COD</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleDriverMode()}
+                disabled={isUpdating}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0",
+                  isDriver ? "bg-zinc-950" : "bg-zinc-300"
+                )}
+                aria-label="Toggle Mode Driver"
+              >
+                <span
+                  className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                    isDriver ? "translate-x-6" : "translate-x-1"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Menu Aksi Order Driver (Hanya tampil jika Mode Driver aktif) */}
+            {isDriver && onOpenDriverOrder && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreMenuOpen(false);
+                  onOpenDriverOrder();
+                }}
+                className="w-full flex items-center gap-3 p-2.5 rounded-md border border-zinc-900 bg-zinc-950 text-white hover:bg-zinc-800 transition-colors text-left cursor-pointer"
+              >
+                <div className="h-9 w-9 rounded-md flex items-center justify-center shrink-0 bg-white/10 text-white">
+                  <Bike className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-white">Order Driver (COD)</div>
+                  <div className="text-[11px] text-zinc-300 truncate">Pencatatan cepat pesanan ojol dan setoran tunai COD</div>
+                </div>
+              </button>
+            )}
+
             {moreNavItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
