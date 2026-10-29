@@ -84,7 +84,7 @@ export function BottomNav({ onOpenQuickEntry, onOpenDriverOrder }: BottomNavProp
 
           <div className="space-y-2 pt-3">
             {/* Toggle Mode Driver (Ojol / COD) */}
-            <div className="flex items-center justify-between p-2.5 rounded-md border border-zinc-200 bg-zinc-50">
+            <div id="tour-driver-mode-mobile" className="flex items-center justify-between p-2.5 rounded-md border border-zinc-200 bg-zinc-50">
               <div className="flex items-center gap-2.5">
                 <div className="h-8 w-8 rounded-md bg-zinc-950 text-white flex items-center justify-center shrink-0">
                   <Bike className="h-4 w-4" />
@@ -136,9 +136,19 @@ export function BottomNav({ onOpenQuickEntry, onOpenDriverOrder }: BottomNavProp
             {moreNavItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
+              const tourId =
+                item.href === "/recurring"
+                  ? "tour-recurring-mobile"
+                  : item.href === "/debts"
+                  ? "tour-debts-mobile"
+                  : item.href === "/categories"
+                  ? "tour-categories-mobile"
+                  : undefined;
+
               return (
                 <Link
                   key={item.href}
+                  id={tourId}
                   href={item.href}
                   onClick={() => setMoreMenuOpen(false)}
                   onMouseEnter={() => prefetchPageData(queryClient, item.href)}

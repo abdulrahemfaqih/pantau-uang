@@ -86,7 +86,11 @@ export function Sidebar({ user, onOpenQuickEntry, onOpenDriverOrder, onStartTour
               : item.href === "/accounts"
               ? "tour-accounts"
               : item.href === "/categories"
-              ? "tour-more-desktop"
+              ? "tour-categories"
+              : item.href === "/recurring"
+              ? "tour-recurring"
+              : item.href === "/debts"
+              ? "tour-debts"
               : undefined;
 
           return (
@@ -111,7 +115,7 @@ export function Sidebar({ user, onOpenQuickEntry, onOpenDriverOrder, onStartTour
       </nav>
 
       {/* Toggle Mode Driver di Desktop Sidebar */}
-      <div className="px-3 py-2 border-t border-zinc-200">
+      <div id="tour-driver-mode" className="px-3 py-2 border-t border-zinc-200">
         <div className="flex items-center justify-between p-2 rounded-md bg-zinc-50 border border-zinc-200">
           <div className="flex items-center gap-2 min-w-0">
             <Bike className="h-3.5 w-3.5 text-zinc-700 shrink-0" />

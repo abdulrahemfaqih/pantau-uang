@@ -46,12 +46,36 @@ const TOUR_STEPS: TourStep[] = [
     actionHint: "Menu Transaksi",
   },
   {
-    desktopSelector: "#tour-more-desktop",
+    desktopSelector: "#tour-recurring",
     mobileSelector: "#tour-more-mobile",
-    title: "Langkah 5: Fitur Otomasi & Pinjaman",
+    title: "Langkah 5: Transaksi Berulang",
     description:
-      "Otomatiskan tagihan bulanan rutin di Transaksi Berulang, pantau pinjaman uang di Hutang & Piutang, serta sesuaikan pos anggaran di menu Kategori.",
-    actionHint: "Fitur Tambahan",
+      "Otomatiskan pencatatan transaksi rutin yang berulang secara berkala (seperti tagihan listrik, langganan internet bulanan, atau penerimaan gaji).",
+    actionHint: "Menu Berulang",
+  },
+  {
+    desktopSelector: "#tour-debts",
+    mobileSelector: "#tour-more-mobile",
+    title: "Langkah 6: Hutang & Piutang",
+    description:
+      "Catat pinjaman uang Anda ke pihak lain maupun piutang orang lain kepada Anda, lengkap dengan jatuh tempo dan riwayat cicilan pelunasan.",
+    actionHint: "Menu Hutang Piutang",
+  },
+  {
+    desktopSelector: "#tour-categories",
+    mobileSelector: "#tour-more-mobile",
+    title: "Langkah 7: Pos Kategori",
+    description:
+      "Kelola dan kelompokkan pos pengeluaran serta pemasukan sesuai kebutuhan Anda, lengkap dengan pilihan warna dan ikon visual yang rapi.",
+    actionHint: "Menu Kategori",
+  },
+  {
+    desktopSelector: "#tour-driver-mode",
+    mobileSelector: "#tour-more-mobile",
+    title: "Langkah 8: Fitur Khusus Ojol / COD",
+    description:
+      "Fitur terbaru untuk driver ojol (Shopee, Gojek, Grab, Maxim). Aktifkan toggle Mode Ojol untuk pencatatan orderan COD dalam 1 klik dengan mutasi saldo otomatis.",
+    actionHint: "Mode Ojol & COD",
   },
 ];
 
