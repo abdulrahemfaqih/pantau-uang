@@ -28,6 +28,8 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const [quickEntryOpen, setQuickEntryOpen] = React.useState(false);
   const [driverOrderOpen, setDriverOrderOpen] = React.useState(false);
   const [tourForced, setTourForced] = React.useState(false);
+  const [mobileMoreMenuOpen, setMobileMoreMenuOpen] = React.useState(false);
+  const [isTourActive, setIsTourActive] = React.useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -91,6 +93,9 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       <BottomNav
         onOpenQuickEntry={() => setQuickEntryOpen(true)}
         onOpenDriverOrder={() => setDriverOrderOpen(true)}
+        moreMenuOpen={mobileMoreMenuOpen}
+        onMoreMenuOpenChange={setMobileMoreMenuOpen}
+        hideBackdrop={isTourActive}
       />
 
       {/* Quick Entry Modal */}
@@ -100,7 +105,19 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       <DriverOrderModal open={driverOrderOpen} onOpenChange={setDriverOrderOpen} />
 
       {/* Interactive Animated Guided Tour untuk Pengguna Baru */}
-      <GuidedTour forceOpen={tourForced} onClose={() => setTourForced(false)} />
+      <GuidedTour
+        forceOpen={tourForced}
+        onTourActiveChange={(active) => {
+          setIsTourActive(active);
+          if (!active) setMobileMoreMenuOpen(false);
+        }}
+        onMobileSheetChange={(open) => setMobileMoreMenuOpen(open)}
+        onClose={() => {
+          setTourForced(false);
+          setIsTourActive(false);
+          setMobileMoreMenuOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -47,7 +47,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     desktopSelector: "#tour-recurring",
-    mobileSelector: "#tour-more-mobile",
+    mobileSelector: "#tour-recurring-mobile",
     title: "Langkah 5: Transaksi Berulang",
     description:
       "Otomatiskan pencatatan transaksi rutin yang berulang secara berkala (seperti tagihan listrik, langganan internet bulanan, atau penerimaan gaji).",
@@ -55,7 +55,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     desktopSelector: "#tour-debts",
-    mobileSelector: "#tour-more-mobile",
+    mobileSelector: "#tour-debts-mobile",
     title: "Langkah 6: Hutang & Piutang",
     description:
       "Catat pinjaman uang Anda ke pihak lain maupun piutang orang lain kepada Anda, lengkap dengan jatuh tempo dan riwayat cicilan pelunasan.",
@@ -63,7 +63,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     desktopSelector: "#tour-categories",
-    mobileSelector: "#tour-more-mobile",
+    mobileSelector: "#tour-categories-mobile",
     title: "Langkah 7: Pos Kategori",
     description:
       "Kelola dan kelompokkan pos pengeluaran serta pemasukan sesuai kebutuhan Anda, lengkap dengan pilihan warna dan ikon visual yang rapi.",
@@ -71,7 +71,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     desktopSelector: "#tour-driver-mode",
-    mobileSelector: "#tour-more-mobile",
+    mobileSelector: "#tour-driver-mode-mobile",
     title: "Langkah 8: Fitur Khusus Ojol / COD",
     description:
       "Fitur terbaru untuk driver ojol (Shopee, Gojek, Grab, Maxim). Aktifkan toggle Mode Ojol untuk pencatatan orderan COD dalam 1 klik dengan mutasi saldo otomatis.",
@@ -84,9 +84,16 @@ const STORAGE_KEY = "pantauuang_guided_tour_completed";
 interface GuidedTourProps {
   forceOpen?: boolean;
   onClose?: () => void;
+  onMobileSheetChange?: (open: boolean) => void;
+  onTourActiveChange?: (active: boolean) => void;
 }
 
-export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
+export function GuidedTour({
+  forceOpen = false,
+  onClose,
+  onMobileSheetChange,
+  onTourActiveChange,
+}: GuidedTourProps) {
   const [isOpen, setIsOpen] = React.useState<boolean>(false);
   const [currentStepIndex, setCurrentStepIndex] = React.useState<number>(0);
   const [targetRect, setTargetRect] = React.useState<DOMRect | null>(null);
@@ -100,6 +107,28 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
       setIsOpen(true);
     }
   }
+
+  // Notifikasi status aktif tur ke parent
+  React.useEffect(() => {
+    onTourActiveChange?.(isOpen);
+  }, [isOpen, onTourActiveChange]);
+
+  // Buka sheet Menu Lainnya secara otomatis di mobile untuk langkah 5 s/d 8
+  React.useEffect(() => {
+    if (!isOpen) {
+      onMobileSheetChange?.(false);
+      return;
+    }
+
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+    if (isMobile) {
+      // Langkah index 4..7 (Langkah 5 s/d 8) berada di dalam Menu Lainnya
+      const shouldOpenSheet = currentStepIndex >= 4;
+      onMobileSheetChange?.(shouldOpenSheet);
+    } else {
+      onMobileSheetChange?.(false);
+    }
+  }, [isOpen, currentStepIndex, onMobileSheetChange]);
 
   // Periksa status kunjungan pertama pengguna (hanya saat mount awal)
   React.useEffect(() => {
@@ -120,9 +149,17 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
     const isDesktop = window.innerWidth >= 1024;
     const currentStep = TOUR_STEPS[currentStepIndex];
     const selector = isDesktop ? currentStep.desktopSelector : currentStep.mobileSelector;
-    const element = document.querySelector(selector);
+    let element = document.querySelector(selector);
+
+    // Fallback jika elemen di dalam sheet mobile belum selesai ter-render
+    if (!element && !isDesktop && currentStepIndex >= 4) {
+      element = document.querySelector("#tour-more-mobile");
+    }
 
     if (element) {
+      if (typeof element.scrollIntoView === "function") {
+        element.scrollIntoView({ block: "nearest", behavior: "instant" });
+      }
       const rect = element.getBoundingClientRect();
       setTargetRect(rect);
     } else {
@@ -135,6 +172,11 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
       updateTargetPosition();
     });
 
+    // Jeda tambahan untuk menunggu transisi buka/tutup sheet selesai di mobile
+    const timer = setTimeout(() => {
+      updateTargetPosition();
+    }, 120);
+
     const handleResizeOrScroll = () => {
       updateTargetPosition();
     };
@@ -144,10 +186,11 @@ export function GuidedTour({ forceOpen = false, onClose }: GuidedTourProps) {
 
     return () => {
       cancelAnimationFrame(rafId);
+      clearTimeout(timer);
       window.removeEventListener("resize", handleResizeOrScroll);
       window.removeEventListener("scroll", handleResizeOrScroll, true);
     };
-  }, [updateTargetPosition]);
+  }, [updateTargetPosition, currentStepIndex]);
 
   const handleNext = () => {
     if (currentStepIndex < TOUR_STEPS.length - 1) {

@@ -12,6 +12,9 @@ import { useDriverMode } from "@/hooks/use-driver-mode";
 interface BottomNavProps {
   onOpenQuickEntry: () => void;
   onOpenDriverOrder?: () => void;
+  moreMenuOpen?: boolean;
+  onMoreMenuOpenChange?: (open: boolean) => void;
+  hideBackdrop?: boolean;
 }
 
 const moreNavItems = [
@@ -35,8 +38,26 @@ const moreNavItems = [
   },
 ];
 
-export function BottomNav({ onOpenQuickEntry, onOpenDriverOrder }: BottomNavProps) {
-  const [moreMenuOpen, setMoreMenuOpen] = React.useState(false);
+export function BottomNav({
+  onOpenQuickEntry,
+  onOpenDriverOrder,
+  moreMenuOpen: controlledMoreMenuOpen,
+  onMoreMenuOpenChange,
+  hideBackdrop = false,
+}: BottomNavProps) {
+  const [internalMoreMenuOpen, setInternalMoreMenuOpen] = React.useState(false);
+  const moreMenuOpen =
+    controlledMoreMenuOpen !== undefined ? controlledMoreMenuOpen : internalMoreMenuOpen;
+
+  const setMoreMenuOpen = React.useCallback(
+    (open: boolean | ((prev: boolean) => boolean)) => {
+      const nextVal = typeof open === "function" ? open(moreMenuOpen) : open;
+      setInternalMoreMenuOpen(nextVal);
+      onMoreMenuOpenChange?.(nextVal);
+    },
+    [moreMenuOpen, onMoreMenuOpenChange]
+  );
+
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { isDriver, toggleDriverMode, isUpdating } = useDriverMode();
@@ -51,8 +72,8 @@ export function BottomNav({ onOpenQuickEntry, onOpenDriverOrder }: BottomNavProp
 
   return (
     <>
-      {/* Backdrop Menu Lainnya */}
-      {moreMenuOpen && (
+      {/* Backdrop Menu Lainnya (disembunyikan saat overlay tour aktif agar tidak bentrok) */}
+      {moreMenuOpen && !hideBackdrop && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden transition-opacity"
           onClick={() => setMoreMenuOpen(false)}
