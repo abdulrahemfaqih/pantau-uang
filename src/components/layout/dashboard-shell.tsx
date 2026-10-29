@@ -39,6 +39,20 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
     prefetchPageData(queryClient, "/transactions");
   }, [queryClient]);
 
+  const handleTourActiveChange = React.useCallback((active: boolean) => {
+    setIsTourActive(active);
+  }, []);
+
+  const handleMobileSheetChange = React.useCallback((open: boolean) => {
+    setMobileMoreMenuOpen(open);
+  }, []);
+
+  const handleTourClose = React.useCallback(() => {
+    setTourForced(false);
+    setIsTourActive(false);
+    setMobileMoreMenuOpen(false);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white text-zinc-950 flex flex-col">
       {/* Desktop Sidebar */}
@@ -107,16 +121,9 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       {/* Interactive Animated Guided Tour untuk Pengguna Baru */}
       <GuidedTour
         forceOpen={tourForced}
-        onTourActiveChange={(active) => {
-          setIsTourActive(active);
-          if (!active) setMobileMoreMenuOpen(false);
-        }}
-        onMobileSheetChange={(open) => setMobileMoreMenuOpen(open)}
-        onClose={() => {
-          setTourForced(false);
-          setIsTourActive(false);
-          setMobileMoreMenuOpen(false);
-        }}
+        onTourActiveChange={handleTourActiveChange}
+        onMobileSheetChange={handleMobileSheetChange}
+        onClose={handleTourClose}
       />
     </div>
   );

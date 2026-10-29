@@ -46,27 +46,32 @@ export function BottomNav({
   hideBackdrop = false,
 }: BottomNavProps) {
   const [internalMoreMenuOpen, setInternalMoreMenuOpen] = React.useState(false);
-  const moreMenuOpen =
-    controlledMoreMenuOpen !== undefined ? controlledMoreMenuOpen : internalMoreMenuOpen;
+  const isControlled = controlledMoreMenuOpen !== undefined;
+  const moreMenuOpen = isControlled ? controlledMoreMenuOpen : internalMoreMenuOpen;
 
   const setMoreMenuOpen = React.useCallback(
     (open: boolean | ((prev: boolean) => boolean)) => {
       const nextVal = typeof open === "function" ? open(moreMenuOpen) : open;
-      setInternalMoreMenuOpen(nextVal);
+      if (!isControlled) {
+        setInternalMoreMenuOpen(nextVal);
+      }
       onMoreMenuOpenChange?.(nextVal);
     },
-    [moreMenuOpen, onMoreMenuOpenChange]
+    [isControlled, moreMenuOpen, onMoreMenuOpenChange]
   );
 
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { isDriver, toggleDriverMode, isUpdating } = useDriverMode();
 
-  const [prevPathname, setPrevPathname] = React.useState(pathname);
-  if (prevPathname !== pathname) {
-    setPrevPathname(pathname);
+  const isFirstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     setMoreMenuOpen(false);
-  }
+  }, [pathname, setMoreMenuOpen]);
 
   const isMoreActive = moreNavItems.some((item) => item.href === pathname);
 

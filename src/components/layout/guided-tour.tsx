@@ -108,27 +108,40 @@ export function GuidedTour({
     }
   }
 
-  // Notifikasi status aktif tur ke parent
-  React.useEffect(() => {
-    onTourActiveChange?.(isOpen);
-  }, [isOpen, onTourActiveChange]);
+  // Gunakan ref untuk callback agar tidak memicu eksekusi effect yang tidak diinginkan
+  const onTourActiveChangeRef = React.useRef(onTourActiveChange);
+  onTourActiveChangeRef.current = onTourActiveChange;
 
-  // Buka sheet Menu Lainnya secara otomatis di mobile untuk langkah 5 s/d 8
+  const onMobileSheetChangeRef = React.useRef(onMobileSheetChange);
+  onMobileSheetChangeRef.current = onMobileSheetChange;
+
+  // Notifikasi status aktif tur ke parent (hanya saat isOpen berubah)
   React.useEffect(() => {
-    if (!isOpen) {
-      onMobileSheetChange?.(false);
-      return;
+    onTourActiveChangeRef.current?.(isOpen);
+  }, [isOpen]);
+
+  // Pantau transisi isOpen: jika tour sebelumnya aktif lalu ditutup, pastikan sheet mobile ditutup
+  const prevIsOpenRef = React.useRef(isOpen);
+  React.useEffect(() => {
+    if (prevIsOpenRef.current && !isOpen) {
+      onMobileSheetChangeRef.current?.(false);
     }
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  // Buka sheet Menu Lainnya secara otomatis di mobile untuk langkah 5 s/d 8 HANYA saat tour aktif
+  React.useEffect(() => {
+    if (!isOpen) return;
 
     const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
     if (isMobile) {
       // Langkah index 4..7 (Langkah 5 s/d 8) berada di dalam Menu Lainnya
       const shouldOpenSheet = currentStepIndex >= 4;
-      onMobileSheetChange?.(shouldOpenSheet);
+      onMobileSheetChangeRef.current?.(shouldOpenSheet);
     } else {
-      onMobileSheetChange?.(false);
+      onMobileSheetChangeRef.current?.(false);
     }
-  }, [isOpen, currentStepIndex, onMobileSheetChange]);
+  }, [isOpen, currentStepIndex]);
 
   // Periksa status kunjungan pertama pengguna (hanya saat mount awal)
   React.useEffect(() => {
