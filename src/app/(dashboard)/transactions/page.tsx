@@ -16,11 +16,12 @@ import { useDriverMode } from "@/hooks/use-driver-mode";
 import { cn, formatRupiah } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Search, RotateCcw, Trash2, Pencil, Bike, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, RotateCcw, Trash2, Pencil, Bike, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
 export default function TransactionsPage() {
   const [currentDate, setCurrentDate] = React.useState<Date>(() => new Date());
   const [isAllTime, setIsAllTime] = React.useState(true);
+  const [expandedDates, setExpandedDates] = React.useState<Set<string>>(() => new Set());
 
   const [search, setSearch] = React.useState("");
   const [type, setType] = React.useState<"INCOME" | "EXPENSE" | "TRANSFER" | "">("");
@@ -135,6 +136,30 @@ export default function TransactionsPage() {
 
     return groups;
   }, [transactions]);
+
+  const toggleDate = (dateKey: string) => {
+    setExpandedDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) {
+        next.delete(dateKey);
+      } else {
+        next.add(dateKey);
+      }
+      return next;
+    });
+  };
+
+  const handleExpandAll = () => {
+    setExpandedDates(new Set(groupedTransactions.map((g) => g.dateKey)));
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedDates(new Set());
+  };
+
+  const allExpanded =
+    groupedTransactions.length > 0 &&
+    groupedTransactions.every((g) => expandedDates.has(g.dateKey));
 
   const handleReset = () => {
     setSearch("");
@@ -360,50 +385,84 @@ export default function TransactionsPage() {
           <span className="font-semibold text-zinc-700">{isAllTime ? "Semua Waktu" : monthName}</span>.
         </Card>
       ) : (
-        <div className="space-y-4">
-          {groupedTransactions.map((group) => (
-            <Card key={group.dateKey} className="overflow-hidden border border-zinc-200 shadow-none">
-              {/* Daily Header */}
-              <div className="bg-zinc-50 px-4 py-2.5 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-xs text-zinc-950 capitalize">
-                    {group.dateLabel}
-                  </span>
-                  {group.isToday && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-950 text-white rounded">
-                      Hari Ini
-                    </span>
-                  )}
-                  {group.isYesterday && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-200 text-zinc-800 rounded">
-                      Kemarin
-                    </span>
-                  )}
-                  <span className="text-[11px] text-zinc-400">
-                    ({group.items.length})
-                  </span>
-                </div>
+        <div className="space-y-3">
+          {/* Baris kontrol ringkas: total hari & expand/collapse all */}
+          <div className="flex items-center justify-between text-xs text-zinc-500 px-1">
+            <span>
+              {groupedTransactions.length} hari transaksi tercatat (klik tanggal untuk rincian)
+            </span>
+            <button
+              type="button"
+              onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+              className="text-[11px] font-medium text-zinc-700 hover:text-zinc-950 underline underline-offset-2 cursor-pointer"
+            >
+              {allExpanded ? "Tutup Semua" : "Buka Semua"}
+            </button>
+          </div>
 
-                {/* Subtotal Pemasukan & Pengeluaran Harian */}
-                <div className="flex items-center gap-3 tabular-nums text-xs font-semibold">
-                  {group.totalIncome > 0 && (
-                    <span className="text-emerald-700">
-                      +{formatRupiah(group.totalIncome)}
-                    </span>
-                  )}
-                  {group.totalExpense > 0 && (
-                    <span className="text-red-700">
-                      -{formatRupiah(group.totalExpense)}
-                    </span>
-                  )}
-                  {group.totalIncome === 0 && group.totalExpense === 0 && (
-                    <span className="text-zinc-400 text-[11px] font-normal">Transfer Saja</span>
-                  )}
-                </div>
-              </div>
+          {groupedTransactions.map((group) => {
+            const isExpanded = expandedDates.has(group.dateKey);
 
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
+            return (
+              <Card key={group.dateKey} className="overflow-hidden border border-zinc-200 shadow-none">
+                {/* Daily Header (Clickable Toggle) */}
+                <button
+                  type="button"
+                  onClick={() => toggleDate(group.dateKey)}
+                  aria-expanded={isExpanded}
+                  className={cn(
+                    "w-full bg-zinc-50 px-4 py-2.5 flex items-center justify-between gap-2 text-left cursor-pointer hover:bg-zinc-100/80 transition-colors",
+                    isExpanded && "border-b border-zinc-200"
+                  )}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-zinc-500 shrink-0 transition-transform duration-200",
+                        isExpanded && "rotate-180"
+                      )}
+                    />
+                    <span className="font-semibold text-xs text-zinc-950 capitalize truncate">
+                      {group.dateLabel}
+                    </span>
+                    {group.isToday && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-950 text-white rounded shrink-0">
+                        Hari Ini
+                      </span>
+                    )}
+                    {group.isYesterday && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-200 text-zinc-800 rounded shrink-0">
+                        Kemarin
+                      </span>
+                    )}
+                    <span className="text-[11px] text-zinc-400 shrink-0">
+                      ({group.items.length})
+                    </span>
+                  </div>
+
+                  {/* Subtotal Pemasukan & Pengeluaran Harian */}
+                  <div className="flex items-center gap-3 tabular-nums text-xs font-semibold shrink-0">
+                    {group.totalIncome > 0 && (
+                      <span className="text-emerald-700">
+                        +{formatRupiah(group.totalIncome)}
+                      </span>
+                    )}
+                    {group.totalExpense > 0 && (
+                      <span className="text-red-700">
+                        -{formatRupiah(group.totalExpense)}
+                      </span>
+                    )}
+                    {group.totalIncome === 0 && group.totalExpense === 0 && (
+                      <span className="text-zinc-400 text-[11px] font-normal">Transfer Saja</span>
+                    )}
+                  </div>
+                </button>
+
+                {/* Expanded Content */}
+                {isExpanded && (
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-white border-b border-zinc-100 text-zinc-400 font-medium uppercase text-[10px] tracking-wider">
                     <tr>
@@ -556,10 +615,13 @@ export default function TransactionsPage() {
                   );
                 })}
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
+            </>
+          )}
+        </Card>
+      );
+    })}
+  </div>
+)}
 
       {/* Edit Modal */}
       <TransactionModal
