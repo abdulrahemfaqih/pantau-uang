@@ -136,7 +136,7 @@ export default function StatisticsPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || !data || data.viewType !== activeTab ? (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Skeleton className="h-24 w-full" />
@@ -154,7 +154,7 @@ export default function StatisticsPage() {
       ) : data ? (
         <div className="space-y-6">
           {/* TAB 1: HARIAN */}
-          {activeTab === "daily" && (() => {
+          {activeTab === "daily" && data.viewType === "daily" && (() => {
             const daily = data as DailyStatisticsData;
             return (
               <>
@@ -244,7 +244,7 @@ export default function StatisticsPage() {
                       <div className="h-72 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
-                            data={daily.dailyData}
+                            data={daily.dailyData || []}
                             margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F4F4F5" />
@@ -318,7 +318,7 @@ export default function StatisticsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {daily.topExpenseDays.length === 0 ? (
+                      {(!daily.topExpenseDays || daily.topExpenseDays.length === 0) ? (
                         <p className="text-xs text-zinc-400">Belum ada data pengeluaran.</p>
                       ) : (
                         <div className="divide-y divide-zinc-100">
@@ -356,7 +356,7 @@ export default function StatisticsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {daily.categoryBreakdown.length === 0 ? (
+                      {(!daily.categoryBreakdown || daily.categoryBreakdown.length === 0) ? (
                         <p className="text-xs text-zinc-400">Belum ada data kategori.</p>
                       ) : (
                         <div className="space-y-3">
@@ -391,7 +391,7 @@ export default function StatisticsPage() {
           })()}
 
           {/* TAB 2: BULANAN */}
-          {activeTab === "monthly" && (() => {
+          {activeTab === "monthly" && data.viewType === "monthly" && (() => {
             const monthly = data as MonthlyStatisticsData;
             return (
               <>
@@ -451,7 +451,7 @@ export default function StatisticsPage() {
                     <div className="h-72 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
-                          data={monthly.monthlyData}
+                          data={monthly.monthlyData || []}
                           margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F4F4F5" />
@@ -539,7 +539,7 @@ export default function StatisticsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 tabular-nums">
-                        {monthly.monthlyData.map((m) => {
+                        {(monthly.monthlyData || []).map((m) => {
                           const net = m.income - m.expense;
                           return (
                             <tr key={m.month} className="hover:bg-zinc-50/70">
@@ -573,7 +573,7 @@ export default function StatisticsPage() {
           })()}
 
           {/* TAB 3: TAHUNAN */}
-          {activeTab === "yearly" && (() => {
+          {activeTab === "yearly" && data.viewType === "yearly" && (() => {
             const yearly = data as YearlyStatisticsData;
             return (
               <>
@@ -601,7 +601,7 @@ export default function StatisticsPage() {
                       {formatRupiah(yearly.averageExpense)}
                     </div>
                     <span className="text-[11px] text-zinc-400 mt-1 block">
-                      Dari {yearly.yearlyData.length} tahun pencatatan
+                      Dari {(yearly.yearlyData || []).length} tahun pencatatan
                     </span>
                   </Card>
 
@@ -630,7 +630,7 @@ export default function StatisticsPage() {
                     <div className="h-72 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
-                          data={yearly.yearlyData}
+                          data={yearly.yearlyData || []}
                           margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F4F4F5" />

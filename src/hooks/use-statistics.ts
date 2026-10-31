@@ -83,7 +83,8 @@ export function useStatistics(type: "daily" | "monthly" | "yearly", month?: numb
       }
       return res.json();
     },
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData) =>
+      previousData?.viewType === type ? previousData : undefined,
   });
 }
 
