@@ -59,6 +59,18 @@ export function prefetchPageData(queryClient: QueryClient, href: string) {
           return res.json();
         },
       });
+    } else if (href === "/statistics") {
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+      queryClient.prefetchQuery({
+        queryKey: ["statistics", "daily", year, month],
+        queryFn: async () => {
+          const res = await fetch(`/api/statistics?type=daily&month=${month}&year=${year}`);
+          if (!res.ok) throw new Error("Prefetch failed");
+          return res.json();
+        },
+      });
     }
   } catch {
     // Silent catch on background prefetch

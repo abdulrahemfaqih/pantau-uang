@@ -16,9 +16,12 @@ import { useDriverMode } from "@/hooks/use-driver-mode";
 import { cn, formatRupiah } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Search, RotateCcw, Trash2, Pencil, Bike } from "lucide-react";
+import { Search, RotateCcw, Trash2, Pencil, Bike, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function TransactionsPage() {
+  const [currentDate, setCurrentDate] = React.useState<Date>(() => new Date());
+  const [isAllTime, setIsAllTime] = React.useState(true);
+
   const [search, setSearch] = React.useState("");
   const [type, setType] = React.useState<"INCOME" | "EXPENSE" | "TRANSFER" | "">("");
   const [accountId, setAccountId] = React.useState("");
@@ -29,20 +32,44 @@ export default function TransactionsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = React.useState(false);
 
+  const month = currentDate.getMonth() + 1;
+  const year = currentDate.getFullYear();
+  const monthName = format(currentDate, "MMMM yyyy", { locale: localeId });
+
+  const handlePrevMonth = () => {
+    setIsAllTime(false);
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setIsAllTime(false);
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
   const { isDriver } = useDriverMode();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
 
-  const activeFiltersCount = [search, type, accountId, categoryId, minAmount, maxAmount].filter(Boolean).length;
+  const activeFiltersCount = [
+    isAllTime ? "all-time" : "",
+    search,
+    type,
+    accountId,
+    categoryId,
+    minAmount,
+    maxAmount,
+  ].filter(Boolean).length;
 
   const filterParams = React.useMemo(() => ({
+    month: isAllTime ? undefined : month,
+    year: isAllTime ? undefined : year,
     search: search || undefined,
     type: type || undefined,
     accountId: accountId || undefined,
     categoryId: categoryId || undefined,
     minAmount: minAmount ? parseInt(minAmount, 10) : undefined,
     maxAmount: maxAmount ? parseInt(maxAmount, 10) : undefined,
-  }), [search, type, accountId, categoryId, minAmount, maxAmount]);
+  }), [isAllTime, month, year, search, type, accountId, categoryId, minAmount, maxAmount]);
 
   const { data: transactions = [], isLoading, deleteTransaction } = useTransactions(filterParams);
 
@@ -116,6 +143,8 @@ export default function TransactionsPage() {
     setCategoryId("");
     setMinAmount("");
     setMaxAmount("");
+    setIsAllTime(true);
+    setCurrentDate(new Date());
   };
 
   const handleDelete = async (id: string) => {
@@ -132,18 +161,51 @@ export default function TransactionsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Riwayat Transaksi</h1>
           <p className="text-xs text-zinc-500 mt-0.5">Daftar seluruh aktivitas arus kas rekening Anda.</p>
         </div>
-        {isDriver && (
-          <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
+          {!isAllTime && (
+            <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-md p-1">
+              <button
+                onClick={handlePrevMonth}
+                className="p-1 rounded text-zinc-600 hover:text-zinc-950 hover:bg-white transition-colors cursor-pointer"
+                aria-label="Bulan Sebelumnya"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="px-2.5 text-xs font-semibold text-zinc-900 capitalize tabular-nums">
+                {monthName}
+              </span>
+              <button
+                onClick={handleNextMonth}
+                className="p-1 rounded text-zinc-600 hover:text-zinc-950 hover:bg-white transition-colors cursor-pointer"
+                aria-label="Bulan Berikutnya"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Toggle Semua Waktu vs Per Bulan */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAllTime((prev) => !prev)}
+            className="h-8 text-xs border-zinc-200 shadow-none font-medium cursor-pointer bg-white text-zinc-700 hover:bg-zinc-100"
+          >
+            {isAllTime ? "Filter Per Bulan" : "Tampilkan Semua"}
+          </Button>
+
+          {isDriver && (
             <Button
               onClick={() => setIsDriverModalOpen(true)}
               variant="outline"
-              className="h-9 text-xs flex items-center gap-1.5 border-zinc-200 hover:bg-zinc-100 text-zinc-950 font-medium"
+              className="h-8 text-xs flex items-center gap-1.5 border-zinc-200 hover:bg-zinc-100 text-zinc-950 font-medium"
             >
               <Bike className="h-4 w-4" />
               <span>Order Driver (COD)</span>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -241,22 +303,37 @@ export default function TransactionsPage() {
       </Card>
 
       {/* Summary Info Bar for active filter list */}
-      {!isLoading && transactions.length > 0 && (
+      {!isLoading && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Card className="p-3 bg-white border border-zinc-200 shadow-none">
-            <span className="text-[11px] text-zinc-500 block">Total Pemasukan</span>
+            <div className="flex items-center justify-between gap-1 mb-1">
+              <span className="text-[11px] text-zinc-500 block truncate">Total Pemasukan</span>
+              <span className="text-[10px] text-zinc-400 capitalize truncate">
+                {isAllTime ? "Semua Waktu" : monthName}
+              </span>
+            </div>
             <span className="text-base font-bold text-emerald-700 tabular-nums">
               +{formatRupiah(totalFilteredIncome)}
             </span>
           </Card>
           <Card className="p-3 bg-white border border-zinc-200 shadow-none">
-            <span className="text-[11px] text-zinc-500 block">Total Pengeluaran</span>
+            <div className="flex items-center justify-between gap-1 mb-1">
+              <span className="text-[11px] text-zinc-500 block truncate">Total Pengeluaran</span>
+              <span className="text-[10px] text-zinc-400 capitalize truncate">
+                {isAllTime ? "Semua Waktu" : monthName}
+              </span>
+            </div>
             <span className="text-base font-bold text-red-700 tabular-nums">
               -{formatRupiah(totalFilteredExpense)}
             </span>
           </Card>
           <Card className="p-3 bg-white border border-zinc-200 shadow-none col-span-2 sm:col-span-1">
-            <span className="text-[11px] text-zinc-500 block">Arus Bersih</span>
+            <div className="flex items-center justify-between gap-1 mb-1">
+              <span className="text-[11px] text-zinc-500 block truncate">Arus Bersih</span>
+              <span className="text-[10px] text-zinc-400 capitalize truncate">
+                {isAllTime ? "Semua Waktu" : monthName}
+              </span>
+            </div>
             <span
               className={cn(
                 "text-base font-bold tabular-nums",
@@ -278,8 +355,9 @@ export default function TransactionsPage() {
           <Skeleton className="h-28 w-full" />
         </div>
       ) : transactions.length === 0 ? (
-        <Card className="p-8 text-center text-xs text-zinc-400">
-          Tidak ada transaksi yang cocok dengan filter yang dipilih.
+        <Card className="p-8 text-center text-xs text-zinc-400 shadow-none border border-zinc-200">
+          Tidak ada transaksi yang cocok dengan filter yang dipilih untuk periode{" "}
+          <span className="font-semibold text-zinc-700">{isAllTime ? "Semua Waktu" : monthName}</span>.
         </Card>
       ) : (
         <div className="space-y-4">

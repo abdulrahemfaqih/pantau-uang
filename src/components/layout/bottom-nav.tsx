@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, Landmark, MoreHorizontal, Plus, Tags, Repeat, HandCoins, X, Bike } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Landmark, MoreHorizontal, Plus, Tags, Repeat, HandCoins, X, Bike, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchPageData } from "@/lib/prefetch";
@@ -18,6 +18,12 @@ interface BottomNavProps {
 }
 
 const moreNavItems = [
+  {
+    label: "Statistik",
+    href: "/statistics",
+    icon: BarChart3,
+    description: "Grafik pengeluaran harian, bulanan, dan tahunan",
+  },
   {
     label: "Kategori",
     href: "/categories",

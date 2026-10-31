@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
       search: searchParams.get("search") || undefined,
       minAmount: searchParams.get("minAmount") || undefined,
       maxAmount: searchParams.get("maxAmount") || undefined,
-      limit: searchParams.get("limit") || 50,
-      offset: searchParams.get("offset") || 0,
+      limit: searchParams.get("limit") || undefined,
+      offset: searchParams.get("offset") || undefined,
     };
 
     const validatedFilter = transactionFilterSchema.parse(filterInput);
@@ -35,8 +35,9 @@ export async function GET(req: NextRequest) {
     const conditions = [eq(transactions.userId, userId)];
 
     if (validatedFilter.month && validatedFilter.year) {
-      const start = startOfMonth(new Date(validatedFilter.year, validatedFilter.month - 1));
-      const end = endOfMonth(new Date(validatedFilter.year, validatedFilter.month - 1));
+      const monthDate = new Date(validatedFilter.year, validatedFilter.month - 1);
+      const start = startOfMonth(monthDate);
+      const end = endOfMonth(monthDate);
       conditions.push(gte(transactions.date, start));
       conditions.push(lte(transactions.date, end));
     } else {
@@ -76,8 +77,8 @@ export async function GET(req: NextRequest) {
     const txList = await db.query.transactions.findMany({
       where: and(...conditions),
       orderBy: [desc(transactions.date), desc(transactions.createdAt)],
-      limit: validatedFilter.limit,
-      offset: validatedFilter.offset,
+      ...(validatedFilter.limit ? { limit: validatedFilter.limit } : {}),
+      ...(validatedFilter.offset ? { offset: validatedFilter.offset } : {}),
       with: {
         account: true,
         toAccount: true,

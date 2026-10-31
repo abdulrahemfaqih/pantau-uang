@@ -2,6 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { TransactionWithDetails } from "./use-transactions";
 import { Account } from "@/db/schema";
 
+export interface WeeklyTrendItem {
+  week: number;
+  label: string;
+  fullLabel: string;
+  income: number;
+  expense: number;
+}
+
 export interface DashboardSummaryData {
   totalBalance: number;
   hiddenAccountsCount: number;
@@ -16,6 +24,7 @@ export interface DashboardSummaryData {
     total: number;
     percentage: number;
   }>;
+  weeklyTrends?: WeeklyTrendItem[];
   monthlyTrends: Array<{
     label: string;
     income: number;

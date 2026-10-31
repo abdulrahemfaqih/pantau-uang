@@ -90,10 +90,13 @@ export default function DashboardPage() {
             currentMonthName={format(currentDate, "MMMM", { locale: localeId })}
           />
 
-          {/* Bento Grid Row 2: 6-Month Trend & Category Breakdown */}
+          {/* Bento Grid Row 2: Weekly Trend & Category Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-7">
-              <TrendChart data={data.monthlyTrends} />
+              <TrendChart
+                data={data.weeklyTrends || data.monthlyTrends}
+                monthName={monthName}
+              />
             </div>
             <div className="lg:col-span-5">
               <CategoryBreakdown categories={data.categoryExpenses} />

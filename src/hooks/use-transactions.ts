@@ -48,6 +48,7 @@ export function useTransactions(filterParams: TransactionFilterParams = {}) {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["statistics"] });
     },
   });
 
@@ -68,6 +69,7 @@ export function useTransactions(filterParams: TransactionFilterParams = {}) {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["statistics"] });
     },
   });
 
@@ -86,6 +88,7 @@ export function useTransactions(filterParams: TransactionFilterParams = {}) {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["statistics"] });
     },
   });
 
