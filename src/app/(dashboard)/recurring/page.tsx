@@ -10,11 +10,39 @@ import { RecurringModal } from "@/components/forms/recurring-modal";
 import { formatRupiah } from "@/lib/utils";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Plus, Trash2, Repeat, Clock, Calendar } from "lucide-react";
+import { Plus, Trash2, Repeat, Clock, Calendar, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 export default function RecurringPage() {
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [syncFeedback, setSyncFeedback] = React.useState<string | null>(null);
+  const queryClient = useQueryClient();
   const { data: items = [], isLoading, toggleActive, deleteRecurring } = useRecurring();
+
+  const handleSync = async () => {
+    try {
+      setIsSyncing(true);
+      setSyncFeedback(null);
+      const res = await fetch("/api/recurring/process", { method: "POST" });
+      const resData = await res.json();
+      if (res.ok) {
+        setSyncFeedback(resData.message || "Sinkronisasi selesai.");
+        queryClient.invalidateQueries({ queryKey: ["recurring-transactions"] });
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        queryClient.invalidateQueries({ queryKey: ["accounts"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["statistics"] });
+      } else {
+        alert(resData.message || "Gagal sinkronisasi");
+      }
+    } catch {
+      alert("Gagal sinkronisasi jadwal transaksi");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleToggle = async (id: string, currentActive: boolean) => {
     await toggleActive({ id, isActive: !currentActive });
@@ -40,18 +68,43 @@ export default function RecurringPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Transaksi Berulang</h1>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Jadwal transaksi otomatis via Vercel Cron untuk pos rutin Anda.
+            Jadwal transaksi otomatis untuk pos rutin keuangan Anda.
           </p>
         </div>
 
-        <Button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-1.5 bg-zinc-950 text-white hover:bg-zinc-800 shadow-none text-xs h-9 px-3.5 self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Buat Jadwal Baru</span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="outline"
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="flex items-center gap-1.5 border-zinc-200 hover:bg-zinc-100 text-zinc-950 text-xs h-9 px-3 cursor-pointer shadow-none"
+            title="Periksa dan proses jadwal yang telah jatuh tempo"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isSyncing && "animate-spin")} />
+            <span>{isSyncing ? "Memproses..." : "Sinkronkan Jatuh Tempo"}</span>
+          </Button>
+
+          <Button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center gap-1.5 bg-zinc-950 text-white hover:bg-zinc-800 shadow-none text-xs h-9 px-3.5 cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Buat Jadwal Baru</span>
+          </Button>
+        </div>
       </div>
+
+      {syncFeedback && (
+        <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md text-xs text-zinc-900 flex items-center justify-between">
+          <span>{syncFeedback}</span>
+          <button
+            onClick={() => setSyncFeedback(null)}
+            className="text-zinc-400 hover:text-zinc-950 text-xs underline cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
 
       {/* Main List */}
       {isLoading ? (

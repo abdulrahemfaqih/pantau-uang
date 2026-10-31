@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { recurringTransactions, categories } from "@/db/schema";
 import { recurringFormSchema } from "@/lib/validations";
 import { desc, eq } from "drizzle-orm";
+import { processDueRecurringTransactions } from "@/lib/recurring-processor";
 
 export async function GET() {
   const userId = await getCurrentUserId();
@@ -12,6 +13,9 @@ export async function GET() {
   }
 
   try {
+    // Otomatis proses jadwal yang telah jatuh tempo untuk user saat memuat data
+    await processDueRecurringTransactions(userId);
+
     const list = await db.query.recurringTransactions.findMany({
       where: eq(recurringTransactions.userId, userId),
       orderBy: [desc(recurringTransactions.createdAt)],
