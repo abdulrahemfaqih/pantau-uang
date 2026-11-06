@@ -402,6 +402,11 @@ export default function TransactionsPage() {
 
           {groupedTransactions.map((group) => {
             const isExpanded = expandedDates.has(group.dateKey);
+            const net = group.totalIncome - group.totalExpense;
+            const hasIncome = group.totalIncome > 0;
+            const hasExpense = group.totalExpense > 0;
+            const hasBoth = hasIncome && hasExpense;
+            const isOnlyTransfer = !hasIncome && !hasExpense;
 
             return (
               <Card key={group.dateKey} className="overflow-hidden border border-zinc-200 shadow-none">
@@ -411,76 +416,125 @@ export default function TransactionsPage() {
                   onClick={() => toggleDate(group.dateKey)}
                   aria-expanded={isExpanded}
                   className={cn(
-                    "w-full bg-zinc-50 px-4 py-2.5 flex items-center justify-between gap-2 text-left cursor-pointer hover:bg-zinc-100/80 transition-colors",
+                    "w-full bg-zinc-50 px-3.5 sm:px-4 py-2.5 text-left cursor-pointer hover:bg-zinc-100/80 transition-colors",
                     isExpanded && "border-b border-zinc-200"
                   )}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 text-zinc-500 shrink-0 transition-transform duration-200",
-                        isExpanded && "rotate-180"
+                  {/* Tampilan Desktop (Satu Baris Sejajar) */}
+                  <div className="hidden md:flex items-center justify-between gap-3 w-full">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 text-zinc-500 shrink-0 transition-transform duration-200",
+                          isExpanded && "rotate-180"
+                        )}
+                      />
+                      <span className="font-semibold text-xs text-zinc-950 capitalize truncate">
+                        {group.dateLabel}
+                      </span>
+                      {group.isToday && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-950 text-white rounded shrink-0">
+                          Hari Ini
+                        </span>
                       )}
-                    />
-                    <span className="font-semibold text-xs text-zinc-950 capitalize truncate">
-                      {group.dateLabel}
-                    </span>
-                    {group.isToday && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-950 text-white rounded shrink-0">
-                        Hari Ini
+                      {group.isYesterday && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-200 text-zinc-800 rounded shrink-0">
+                          Kemarin
+                        </span>
+                      )}
+                      <span className="text-[11px] text-zinc-400 shrink-0">
+                        ({group.items.length})
                       </span>
-                    )}
-                    {group.isYesterday && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium bg-zinc-200 text-zinc-800 rounded shrink-0">
-                        Kemarin
-                      </span>
-                    )}
-                    <span className="text-[11px] text-zinc-400 shrink-0">
-                      ({group.items.length})
-                    </span>
-                  </div>
+                    </div>
 
-                  {/* Subtotal Pemasukan & Pengeluaran Harian + Arus Kas Bersih (Net) */}
-                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2.5 tabular-nums text-xs font-semibold shrink-0">
-                    {group.totalIncome > 0 && group.totalExpense > 0 ? (
-                      <>
-                        <div className="flex items-center gap-1.5 text-[11px] font-normal text-zinc-500">
-                          <span className="text-emerald-700 font-semibold">
+                    <div className="flex items-center gap-3 tabular-nums text-xs shrink-0">
+                      {hasBoth && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-normal">
+                          <span className="text-emerald-700 font-medium">
                             +{formatRupiah(group.totalIncome)}
                           </span>
                           <span className="text-zinc-300">/</span>
-                          <span className="text-red-700 font-semibold">
+                          <span className="text-red-700 font-medium">
                             -{formatRupiah(group.totalExpense)}
                           </span>
                         </div>
-                        {(() => {
-                          const net = group.totalIncome - group.totalExpense;
-                          return (
-                            <span
-                              className={cn(
-                                "px-1.5 py-0.5 rounded text-[11px] font-semibold border",
-                                net > 0 && "bg-emerald-50 text-emerald-800 border-emerald-200",
-                                net < 0 && "bg-red-50 text-red-800 border-red-200",
-                                net === 0 && "bg-zinc-100 text-zinc-700 border-zinc-200"
-                              )}
-                              title="Arus Kas Bersih (Net)"
-                            >
-                              Net {net > 0 ? `+${formatRupiah(net)}` : net < 0 ? `-${formatRupiah(Math.abs(net))}` : "Rp 0"}
-                            </span>
-                          );
-                        })()}
-                      </>
-                    ) : group.totalIncome > 0 ? (
-                      <span className="text-emerald-700">
-                        +{formatRupiah(group.totalIncome)}
+                      )}
+                      <span
+                        className={cn(
+                          "font-bold text-xs",
+                          net > 0 && "text-emerald-700",
+                          net < 0 && "text-red-700",
+                          net === 0 && !isOnlyTransfer && "text-zinc-600",
+                          isOnlyTransfer && "text-zinc-400 font-normal text-[11px]"
+                        )}
+                      >
+                        {net > 0
+                          ? `+${formatRupiah(net)}`
+                          : net < 0
+                          ? `-${formatRupiah(Math.abs(net))}`
+                          : isOnlyTransfer
+                          ? "Transfer Saja"
+                          : "Rp 0"}
                       </span>
-                    ) : group.totalExpense > 0 ? (
-                      <span className="text-red-700">
-                        -{formatRupiah(group.totalExpense)}
+                    </div>
+                  </div>
+
+                  {/* Tampilan Ponsel (Mobile: Terstruktur Rapi 2 Baris) */}
+                  <div className="md:hidden flex flex-col gap-1 w-full">
+                    {/* Baris 1: Tanggal & Badge di kiri, Arus Kas Bersih di kanan */}
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 text-zinc-500 shrink-0 transition-transform duration-200",
+                            isExpanded && "rotate-180"
+                          )}
+                        />
+                        <span className="font-semibold text-xs text-zinc-950 capitalize truncate">
+                          {group.dateLabel}
+                        </span>
+                        {group.isToday && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-medium bg-zinc-950 text-white rounded shrink-0">
+                            Hari Ini
+                          </span>
+                        )}
+                        {group.isYesterday && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-medium bg-zinc-200 text-zinc-800 rounded shrink-0">
+                            Kemarin
+                          </span>
+                        )}
+                      </div>
+
+                      <span
+                        className={cn(
+                          "font-bold text-xs tabular-nums shrink-0",
+                          net > 0 && "text-emerald-700",
+                          net < 0 && "text-red-700",
+                          net === 0 && !isOnlyTransfer && "text-zinc-600",
+                          isOnlyTransfer && "text-zinc-400 font-normal text-[11px]"
+                        )}
+                      >
+                        {net > 0
+                          ? `+${formatRupiah(net)}`
+                          : net < 0
+                          ? `-${formatRupiah(Math.abs(net))}`
+                          : isOnlyTransfer
+                          ? "Transfer Saja"
+                          : "Rp 0"}
                       </span>
-                    ) : (
-                      <span className="text-zinc-400 text-[11px] font-normal">Transfer Saja</span>
-                    )}
+                    </div>
+
+                    {/* Baris 2: Jumlah transaksi di kiri, rincian masuk/keluar di kanan jika ada keduanya */}
+                    <div className="flex items-center justify-between pl-5.5 text-[11px] text-zinc-500 tabular-nums w-full">
+                      <span>{group.items.length} transaksi</span>
+                      {hasBoth && (
+                        <div className="flex items-center gap-1 font-medium">
+                          <span className="text-emerald-700">+{formatRupiah(group.totalIncome)}</span>
+                          <span className="text-zinc-300">/</span>
+                          <span className="text-red-700">-{formatRupiah(group.totalExpense)}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </button>
 
