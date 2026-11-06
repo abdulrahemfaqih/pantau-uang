@@ -440,19 +440,45 @@ export default function TransactionsPage() {
                     </span>
                   </div>
 
-                  {/* Subtotal Pemasukan & Pengeluaran Harian */}
-                  <div className="flex items-center gap-3 tabular-nums text-xs font-semibold shrink-0">
-                    {group.totalIncome > 0 && (
+                  {/* Subtotal Pemasukan & Pengeluaran Harian + Arus Kas Bersih (Net) */}
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2.5 tabular-nums text-xs font-semibold shrink-0">
+                    {group.totalIncome > 0 && group.totalExpense > 0 ? (
+                      <>
+                        <div className="flex items-center gap-1.5 text-[11px] font-normal text-zinc-500">
+                          <span className="text-emerald-700 font-semibold">
+                            +{formatRupiah(group.totalIncome)}
+                          </span>
+                          <span className="text-zinc-300">/</span>
+                          <span className="text-red-700 font-semibold">
+                            -{formatRupiah(group.totalExpense)}
+                          </span>
+                        </div>
+                        {(() => {
+                          const net = group.totalIncome - group.totalExpense;
+                          return (
+                            <span
+                              className={cn(
+                                "px-1.5 py-0.5 rounded text-[11px] font-semibold border",
+                                net > 0 && "bg-emerald-50 text-emerald-800 border-emerald-200",
+                                net < 0 && "bg-red-50 text-red-800 border-red-200",
+                                net === 0 && "bg-zinc-100 text-zinc-700 border-zinc-200"
+                              )}
+                              title="Arus Kas Bersih (Net)"
+                            >
+                              Net {net > 0 ? `+${formatRupiah(net)}` : net < 0 ? `-${formatRupiah(Math.abs(net))}` : "Rp 0"}
+                            </span>
+                          );
+                        })()}
+                      </>
+                    ) : group.totalIncome > 0 ? (
                       <span className="text-emerald-700">
                         +{formatRupiah(group.totalIncome)}
                       </span>
-                    )}
-                    {group.totalExpense > 0 && (
+                    ) : group.totalExpense > 0 ? (
                       <span className="text-red-700">
                         -{formatRupiah(group.totalExpense)}
                       </span>
-                    )}
-                    {group.totalIncome === 0 && group.totalExpense === 0 && (
+                    ) : (
                       <span className="text-zinc-400 text-[11px] font-normal">Transfer Saja</span>
                     )}
                   </div>
