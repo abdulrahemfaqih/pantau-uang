@@ -1,7 +1,11 @@
-const CACHE_NAME = "pantauuang-v1";
+const CACHE_NAME = "pantauuang-v2";
 const STATIC_ASSETS = [
   "/",
   "/icon.svg",
+  "/apple-touch-icon.png",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable.png",
   "/icons/icon-192.svg",
   "/icons/icon-512.svg",
   "/icons/icon-maskable.svg",
