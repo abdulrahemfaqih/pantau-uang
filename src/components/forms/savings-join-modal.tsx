@@ -92,3 +92,4 @@ export function SavingsJoinModal({ open, onOpenChange }: SavingsJoinModalProps) 
     </Dialog>
   );
 }
+

@@ -180,3 +180,4 @@ export function useSavings() {
     isJoining: joinGoalMutation.isPending,
   };
 }
+
