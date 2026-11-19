@@ -221,6 +221,7 @@ export const savingsGoalFormSchema = z.object({
   isShared: z.boolean().default(false),
   hasYield: z.boolean().default(false),
   yieldNote: z.string().max(100, "Keterangan instrumen maksimal 100 karakter").optional().nullable(),
+  linkedAccountId: z.string().uuid("Rekening penampung tidak valid").optional().nullable(),
   initialAmount: z.coerce
     .number()
     .int("Nominal setoran awal harus bilangan bulat")

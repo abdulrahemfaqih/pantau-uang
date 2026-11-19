@@ -202,6 +202,12 @@ export default function SavingsDetailPage() {
 
               {/* Subtitle / Notes */}
               <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+                {goal.linkedAccount && (
+                  <span className="font-medium text-zinc-700">
+                    Penampung: <span className="font-semibold text-zinc-950">{goal.linkedAccount.name}</span>
+                  </span>
+                )}
+                {goal.linkedAccount && (goal.yieldNote || targetDateFormatted) && <span>•</span>}
                 {goal.yieldNote && (
                   <span className="font-medium text-zinc-700">
                     Instrumen: {goal.yieldNote}

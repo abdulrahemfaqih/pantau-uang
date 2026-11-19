@@ -3,7 +3,7 @@ import { getCurrentUserId } from "@/lib/current-user";
 import { db } from "@/db";
 import { accounts, categories, savingsGoals, savingsMembers, savingsTransactions, transactions } from "@/db/schema";
 import { savingsGoalFormSchema } from "@/lib/validations";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql, and } from "drizzle-orm";
 
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -53,6 +53,7 @@ export async function GET() {
             image: true,
           },
         },
+        linkedAccount: true,
         members: {
           with: {
             user: {
@@ -185,14 +186,38 @@ export async function POST(req: NextRequest) {
     const inviteCode = validated.isShared ? generateInviteCode() : null;
 
     const result = await db.transaction(async (tx) => {
-      // 1. Buat record target tabungan
+      // 1. Cek apakah ditautkan ke rekening penampung khusus
+      let linkedAcc: typeof accounts.$inferSelect | null = null;
+      if (validated.linkedAccountId) {
+        const [acc] = await tx
+          .select()
+          .from(accounts)
+          .where(and(eq(accounts.id, validated.linkedAccountId), eq(accounts.userId, userId)))
+          .limit(1);
+        if (acc) linkedAcc = acc;
+      }
+
+      // Tentukan saldo awal:
+      // Jika ditautkan ke rekening penampung:
+      // gunakan initialAmount jika diisi > 0, atau otomatis seluruh saldo rekening penampung saat ini
+      let initialAmt = 0;
+      if (linkedAcc) {
+        initialAmt =
+          validated.initialAmount !== undefined && validated.initialAmount > 0
+            ? validated.initialAmount
+            : Math.max(0, Number(linkedAcc.currentBalance));
+      } else {
+        initialAmt = validated.initialAmount || 0;
+      }
+
+      // 2. Buat record target tabungan
       const [newGoal] = await tx
         .insert(savingsGoals)
         .values({
           userId,
           name: validated.name,
           targetAmount: validated.targetAmount,
-          currentAmount: validated.initialAmount || 0,
+          currentAmount: initialAmt,
           targetDate: validated.targetDate || null,
           color: validated.color,
           icon: validated.icon,
@@ -200,31 +225,45 @@ export async function POST(req: NextRequest) {
           hasYield: validated.hasYield || false,
           yieldNote: validated.yieldNote || null,
           totalYieldEarned: 0,
+          linkedAccountId: linkedAcc ? linkedAcc.id : null,
           inviteCode,
           status: "ACTIVE",
         })
         .returning();
 
-      // 2. Daftarkan pembuat sebagai OWNER di savings_members
+      // 3. Daftarkan pembuat sebagai OWNER di savings_members
       await tx.insert(savingsMembers).values({
         savingsGoalId: newGoal.id,
         userId,
         role: "OWNER",
+        linkedAccountId: linkedAcc ? linkedAcc.id : null,
       });
 
-      // 3. Jika ada setoran awal
-      if (validated.initialAmount && validated.initialAmount > 0) {
+      // 4. Catat riwayat setoran awal
+      if (linkedAcc && initialAmt > 0) {
+        // Mode Rekening Penampung: Saldo rekening penampung TIDAK DIPOTONG
         await tx.insert(savingsTransactions).values({
           savingsGoalId: newGoal.id,
           userId,
           type: "DEPOSIT",
-          amount: validated.initialAmount,
+          amount: initialAmt,
+          fromAccountId: null,
+          toAccountId: linkedAcc.id,
+          note: `Saldo tersimpan di rekening penampung: ${linkedAcc.name}`,
+          date: new Date(),
+        });
+      } else if (!linkedAcc && initialAmt > 0) {
+        // Mode Celengan Kas Harian: potong rekening sumber jika ada
+        await tx.insert(savingsTransactions).values({
+          savingsGoalId: newGoal.id,
+          userId,
+          type: "DEPOSIT",
+          amount: initialAmt,
           fromAccountId: validated.initialAccountId || null,
           note: "Setoran awal tabungan",
           date: new Date(),
         });
 
-        // Jika rekening asal dipilih, potong saldo dan catat transaksi
         if (validated.initialAccountId) {
           const [acc] = await tx
             .select()
@@ -236,11 +275,10 @@ export async function POST(req: NextRequest) {
             await tx
               .update(accounts)
               .set({
-                currentBalance: sql`${accounts.currentBalance} - ${validated.initialAmount}`,
+                currentBalance: sql`${accounts.currentBalance} - ${initialAmt}`,
               })
               .where(eq(accounts.id, validated.initialAccountId));
 
-            // Kategori sistem untuk tabungan
             let [savingsCat] = await tx
               .select()
               .from(categories)
@@ -265,7 +303,7 @@ export async function POST(req: NextRequest) {
             await tx.insert(transactions).values({
               userId,
               type: "EXPENSE",
-              amount: validated.initialAmount,
+              amount: initialAmt,
               date: new Date(),
               note: `Setoran awal tabungan: ${validated.name}`,
               accountId: validated.initialAccountId,

@@ -261,6 +261,7 @@ export const savingsGoals = pgTable(
     hasYield: boolean("has_yield").default(false).notNull(),
     yieldNote: text("yield_note"),
     totalYieldEarned: bigint("total_yield_earned", { mode: "number" }).default(0).notNull(),
+    linkedAccountId: uuid("linked_account_id").references(() => accounts.id, { onDelete: "set null" }),
     status: varchar("status", { length: 20 })
       .default("ACTIVE")
       .notNull()
@@ -278,6 +279,10 @@ export const savingsGoalsRelations = relations(savingsGoals, ({ one, many }) => 
     fields: [savingsGoals.userId],
     references: [users.id],
   }),
+  linkedAccount: one(accounts, {
+    fields: [savingsGoals.linkedAccountId],
+    references: [accounts.id],
+  }),
   members: many(savingsMembers),
   transactions: many(savingsTransactions),
 }));
@@ -294,6 +299,7 @@ export const savingsMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     role: varchar("role", { length: 20 }).default("MEMBER").notNull().$type<"OWNER" | "MEMBER">(),
+    linkedAccountId: uuid("linked_account_id").references(() => accounts.id, { onDelete: "set null" }),
     joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -310,6 +316,10 @@ export const savingsMembersRelations = relations(savingsMembers, ({ one }) => ({
   user: one(users, {
     fields: [savingsMembers.userId],
     references: [users.id],
+  }),
+  linkedAccount: one(accounts, {
+    fields: [savingsMembers.linkedAccountId],
+    references: [accounts.id],
   }),
 }));
 

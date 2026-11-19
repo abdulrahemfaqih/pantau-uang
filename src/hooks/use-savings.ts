@@ -33,6 +33,7 @@ export interface SavingsGoalWithDetails extends SavingsGoal {
   isOwner: boolean;
   role?: string;
   currentUserId?: string;
+  linkedAccount?: Account | null;
   owner?: {
     id: string;
     name: string;

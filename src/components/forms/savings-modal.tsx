@@ -47,6 +47,7 @@ function SavingsForm({ onClose }: { onClose: () => void }) {
   const [displayTarget, setDisplayTarget] = React.useState("");
   const [targetAmount, setTargetAmount] = React.useState<number>(0);
 
+  const [linkedAccountId, setLinkedAccountId] = React.useState<string>("");
   const [displayInitial, setDisplayInitial] = React.useState("");
   const [initialAmount, setInitialAmount] = React.useState<number>(0);
   const [initialAccountId, setInitialAccountId] = React.useState<string>("");
@@ -99,8 +100,9 @@ function SavingsForm({ onClose }: { onClose: () => void }) {
         isShared,
         hasYield,
         yieldNote: hasYield && yieldNote.trim() ? yieldNote.trim() : undefined,
+        linkedAccountId: linkedAccountId || undefined,
         initialAmount: initialAmount > 0 ? initialAmount : undefined,
-        initialAccountId: initialAmount > 0 && initialAccountId ? initialAccountId : undefined,
+        initialAccountId: !linkedAccountId && initialAmount > 0 && initialAccountId ? initialAccountId : undefined,
       });
 
       onClose();
@@ -184,41 +186,74 @@ function SavingsForm({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        {/* Setoran Awal (Opsional) */}
-        <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 mb-1">Setoran Awal (Opsional)</label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="Rp 0"
-              value={displayInitial}
-              onChange={handleInitialChange}
-              className="h-9 tabular-nums bg-white"
-            />
-          </div>
-
-          {initialAmount > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-zinc-700 mb-1">Rekening Sumber Dana</label>
-              <Select
-                value={initialAccountId}
-                onChange={(e) => setInitialAccountId(e.target.value)}
-                className="bg-white"
-              >
-                <option value="">Tanpa Potong Saldo Rekening (Uang Sudah di Tempat Simpan / Catat Visual)</option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    Potong dari {acc.name} (Saldo: {formatRupiah(Number(acc.currentBalance))})
-                  </option>
-                ))}
-              </Select>
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Pilih "Tanpa Potong Saldo" jika uang sudah berada di rekening penampung Anda (misal di rekening RDPU) agar saldo rekening tidak terpotong dua kali.
-              </p>
-            </div>
-          )}
+        {/* Rekening Penampung (Opsional - Disarankan untuk RDPU/Bibit) */}
+        <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md space-y-2">
+          <label className="block text-xs font-semibold text-zinc-950">
+            Tautkan ke Rekening Penampung (Opsional)
+          </label>
+          <Select
+            value={linkedAccountId}
+            onChange={(e) => {
+              const accId = e.target.value;
+              setLinkedAccountId(accId);
+              if (accId) {
+                const targetAcc = accounts.find((a) => a.id === accId);
+                if (targetAcc && initialAmount === 0) {
+                  setInitialAmount(Number(targetAcc.currentBalance));
+                  setDisplayInitial(formatRupiah(Number(targetAcc.currentBalance)));
+                }
+              }
+            }}
+            className="bg-white"
+          >
+            <option value="">Tanpa Rekening Penampung Khusus (Celengan Bebas)</option>
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} (Saldo saat ini: {formatRupiah(Number(acc.currentBalance))})
+              </option>
+            ))}
+          </Select>
+          <p className="text-[11px] text-zinc-500">
+            {linkedAccountId
+              ? "Saldo rekening ini otomatis tersinkronisasi menjadi saldo tabungan TANPA memotong saldo rekening. Rekening Anda tetap aman 100% jika tabungan dihapus."
+              : "Pilih rekening penampung (misal: Rekening RDPU) jika uang Anda memang sudah disimpan di rekening tersebut."}
+          </p>
         </div>
+
+        {/* Setoran Awal (Jika tidak menautkan rekening penampung) */}
+        {!linkedAccountId && (
+          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1">Setoran Awal (Opsional)</label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="Rp 0"
+                value={displayInitial}
+                onChange={handleInitialChange}
+                className="h-9 tabular-nums bg-white"
+              />
+            </div>
+
+            {initialAmount > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Potong dari Rekening Kas Harian</label>
+                <Select
+                  value={initialAccountId}
+                  onChange={(e) => setInitialAccountId(e.target.value)}
+                  className="bg-white"
+                >
+                  <option value="">Tanpa Potong Saldo Rekening (Pencatatan Visual)</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      Potong dari {acc.name} (Saldo: {formatRupiah(Number(acc.currentBalance))})
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Instrumen Imbal Hasil / RDPU */}
         <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md space-y-3">
