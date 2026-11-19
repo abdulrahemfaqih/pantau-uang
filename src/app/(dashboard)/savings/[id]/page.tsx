@@ -158,101 +158,134 @@ export default function SavingsDetailPage() {
       </div>
 
       {/* Main Header Card */}
-      <Card className="p-5 sm:p-6 border border-zinc-200 shadow-none space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Identity */}
-          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+      <Card className="p-4 sm:p-6 border border-zinc-200 shadow-none space-y-4">
+        {/* Top Section: Identity + Delete Button */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
             <div
-              className="h-12 w-12 rounded-md flex items-center justify-center text-white shrink-0"
+              className="h-11 w-11 sm:h-12 sm:w-12 rounded-md flex items-center justify-center text-white shrink-0"
               style={{ backgroundColor: goal.color }}
             >
-              <IconComp className="h-6 w-6" />
+              <IconComp className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-zinc-950 truncate">
-                  {goal.name}
-                </h1>
+              <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight text-zinc-950 truncate">
+                {goal.name}
+              </h1>
+
+              {/* Compact Badges */}
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span
                   className={cn(
-                    "px-2 py-0.5 rounded text-[11px] font-semibold border shrink-0",
+                    "px-1.5 py-0.5 rounded text-[10px] font-semibold border shrink-0",
                     goal.isShared
                       ? "bg-blue-50 text-blue-800 border-blue-200"
                       : "bg-zinc-100 text-zinc-800 border-zinc-200"
                   )}
                 >
-                  {goal.isShared ? "Tabungan Bersama" : "Tabungan Mandiri"}
+                  {goal.isShared ? "Bersama" : "Mandiri"}
                 </span>
+
                 {goal.hasYield && (
-                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold border shrink-0 bg-emerald-50 text-emerald-800 border-emerald-200 flex items-center gap-1">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold border shrink-0 bg-emerald-50 text-emerald-800 border-emerald-200 flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
-                    <span>RDPU / Berimbal Hasil</span>
+                    <span>RDPU</span>
                   </span>
                 )}
+
                 {goal.isOwner ? (
-                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold border shrink-0 bg-zinc-950 text-white border-zinc-950">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold border shrink-0 bg-zinc-950 text-white border-zinc-950">
                     Owner
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold border shrink-0 bg-zinc-100 text-zinc-700 border-zinc-200">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold border shrink-0 bg-zinc-100 text-zinc-700 border-zinc-200">
                     Anggota
                   </span>
                 )}
               </div>
 
-              {/* Subtitle / Notes */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+              {/* Sub-info / Meta */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-500 pt-0.5">
                 {goal.linkedAccount && (
-                  <span className="font-medium text-zinc-700">
-                    Penampung: <span className="font-semibold text-zinc-950">{goal.linkedAccount.name}</span>
+                  <span>
+                    Penampung: <span className="font-medium text-zinc-800">{goal.linkedAccount.name}</span>
                   </span>
                 )}
                 {goal.linkedAccount && (goal.yieldNote || targetDateFormatted) && <span>•</span>}
                 {goal.yieldNote && (
-                  <span className="font-medium text-zinc-700">
-                    Instrumen: {goal.yieldNote}
+                  <span>
+                    Instrumen: <span className="font-medium text-zinc-800">{goal.yieldNote}</span>
                   </span>
                 )}
                 {goal.yieldNote && targetDateFormatted && <span>•</span>}
                 {targetDateFormatted && (
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-zinc-400" />
                     <span>Target: {targetDateFormatted}</span>
-                  </div>
+                  </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-            {goal.isShared && goal.inviteCode && (
-              <button
-                onClick={() => handleCopyInviteCode(goal.inviteCode!)}
-                className="px-2.5 py-1.5 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-mono font-medium border border-zinc-200 flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
-                title="Klik untuk menyalin kode undangan"
-              >
-                {copiedCode === goal.inviteCode ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-emerald-700">Tersalin</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5 text-zinc-500" />
-                    <span>{goal.inviteCode}</span>
-                  </>
-                )}
-              </button>
-            )}
+          {/* Delete / Leave button placed cleanly at top-right corner */}
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-1.5 sm:p-2 rounded text-zinc-400 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer border border-transparent hover:border-red-200 shrink-0"
+            title={goal.isOwner ? "Hapus tabungan" : "Keluar dari tabungan"}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Invite Code Utility Bar (Khusus Tabungan Bersama) */}
+        {goal.isShared && goal.inviteCode && (
+          <div className="p-2 sm:p-2.5 bg-zinc-50 border border-zinc-200 rounded-md flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Users2 className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+              <span className="text-[11px] text-zinc-500 truncate">Kode Undangan Tabungan:</span>
+              <span className="font-mono font-bold text-zinc-950 text-xs px-1.5 py-0.5 bg-white border border-zinc-200 rounded">
+                {goal.inviteCode}
+              </span>
+            </div>
+            <button
+              onClick={() => handleCopyInviteCode(goal.inviteCode!)}
+              className="text-[11px] font-medium text-zinc-700 hover:text-zinc-950 flex items-center gap-1 cursor-pointer shrink-0 ml-2 py-0.5 px-2 rounded hover:bg-zinc-200 transition-colors"
+            >
+              {copiedCode === goal.inviteCode ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  <span className="text-emerald-700">Tersalin</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5 text-zinc-500" />
+                  <span>Salin Kode</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Action Buttons Section */}
+        <div className="pt-2 border-t border-zinc-100">
+          <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2">
+            <Button
+              onClick={() => handleOpenAction("DEPOSIT")}
+              className="text-xs h-9 bg-zinc-950 text-white hover:bg-zinc-800 shadow-none font-medium gap-1.5 justify-center cursor-pointer order-1 sm:order-last"
+            >
+              <ArrowUpRight className="h-3.5 w-3.5" />
+              <span>Setor Dana</span>
+            </Button>
 
             {goal.hasYield && (
               <Button
                 onClick={() => setYieldModalOpen(true)}
                 variant="outline"
-                className="text-xs h-9 px-3 text-emerald-700 border-emerald-300 hover:bg-emerald-50 shadow-none font-medium gap-1.5"
+                className="text-xs h-9 text-emerald-800 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 shadow-none font-medium gap-1.5 justify-center cursor-pointer order-2 sm:order-2"
               >
-                <TrendingUp className="h-3.5 w-3.5" />
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-700" />
                 <span>Update Nilai</span>
               </Button>
             )}
@@ -261,29 +294,15 @@ export default function SavingsDetailPage() {
               <Button
                 onClick={() => handleOpenAction("WITHDRAW")}
                 variant="outline"
-                className="text-xs h-9 px-3 text-zinc-950 border-zinc-300 hover:bg-zinc-100 shadow-none font-medium gap-1.5"
+                className={cn(
+                  "text-xs h-9 text-zinc-950 border-zinc-300 hover:bg-zinc-100 shadow-none font-medium gap-1.5 justify-center cursor-pointer order-3",
+                  goal.hasYield ? "col-span-2 sm:col-span-1" : "col-span-1"
+                )}
               >
                 <ArrowDownLeft className="h-3.5 w-3.5 text-zinc-600" />
                 <span>Tarik Dana</span>
               </Button>
             )}
-
-            <Button
-              onClick={() => handleOpenAction("DEPOSIT")}
-              className="text-xs h-9 px-3.5 bg-zinc-950 text-white hover:bg-zinc-800 shadow-none font-medium gap-1.5"
-            >
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              <span>Setor Dana</span>
-            </Button>
-
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="p-2 rounded text-zinc-400 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer border border-transparent hover:border-red-200 ml-1"
-              title={goal.isOwner ? "Hapus tabungan" : "Keluar dari tabungan"}
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </Card>
