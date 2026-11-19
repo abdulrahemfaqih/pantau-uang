@@ -51,6 +51,7 @@ export const transactions = pgTable(
     toAccountId: uuid("to_account_id").references(() => accounts.id, { onDelete: "cascade" }),
     categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
     parentTransferId: uuid("parent_transfer_id"),
+    excludeFromStats: boolean("exclude_from_stats").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -171,6 +172,7 @@ export const debts = pgTable(
     personName: text("person_name").notNull(),
     amount: bigint("amount", { mode: "number" }).notNull(),
     remainingAmount: bigint("remaining_amount", { mode: "number" }).notNull(),
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
     dueDate: timestamp("due_date", { withTimezone: true }),
     status: varchar("status", { length: 20 })
       .default("UNPAID")
@@ -189,6 +191,10 @@ export const debtsRelations = relations(debts, ({ one, many }) => ({
   user: one(users, {
     fields: [debts.userId],
     references: [users.id],
+  }),
+  account: one(accounts, {
+    fields: [debts.accountId],
+    references: [accounts.id],
   }),
   payments: many(debtPayments),
 }));

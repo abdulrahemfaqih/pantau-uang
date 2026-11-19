@@ -125,12 +125,14 @@ export default function TransactionsPage() {
 
       group.items.push(tx);
 
-      // Pengecualian transfer dari total arus kas harian
+      // Pengecualian transfer dan transaksi non-statistik dari total arus kas harian
       const amount = Number(tx.amount);
-      if (tx.type === "INCOME") {
-        group.totalIncome += amount;
-      } else if (tx.type === "EXPENSE") {
-        group.totalExpense += amount;
+      if (!tx.excludeFromStats) {
+        if (tx.type === "INCOME") {
+          group.totalIncome += amount;
+        } else if (tx.type === "EXPENSE") {
+          group.totalExpense += amount;
+        }
       }
     }
 
@@ -576,6 +578,11 @@ export default function TransactionsPage() {
                               <Badge variant={badgeVariant} className="text-[10px] px-1.5 py-0.5">
                                 {tx.type === "INCOME" ? "Masuk" : tx.type === "EXPENSE" ? "Keluar" : "Transfer"}
                               </Badge>
+                              {tx.excludeFromStats && (
+                                <span className="px-1 py-0.2 bg-zinc-100 text-zinc-600 rounded text-[9px] border border-zinc-200" title="Tidak memengaruhi statistik laba/rugi">
+                                  Hutang/Piutang
+                                </span>
+                              )}
                               <span className="font-medium text-zinc-950">
                                 {tx.type === "TRANSFER"
                                   ? `${tx.account?.name || "Asal"} → ${tx.toAccount?.name || "Tujuan"}`
@@ -641,10 +648,17 @@ export default function TransactionsPage() {
 
                   return (
                     <div key={tx.id} className="p-3.5 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                        <Badge variant={badgeVariant} className="text-[9px] px-1.5 py-0.5 shrink-0">
-                          {tx.type === "INCOME" ? "Masuk" : tx.type === "EXPENSE" ? "Keluar" : "Transfer"}
-                        </Badge>
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Badge variant={badgeVariant} className="text-[9px] px-1.5 py-0.5">
+                            {tx.type === "INCOME" ? "Masuk" : tx.type === "EXPENSE" ? "Keluar" : "Transfer"}
+                          </Badge>
+                          {tx.excludeFromStats && (
+                            <span className="px-1 py-0.2 bg-zinc-100 text-zinc-600 rounded text-[9px] border border-zinc-200">
+                              H/P
+                            </span>
+                          )}
+                        </div>
                         <div className="min-w-0">
                           <div className="font-medium text-zinc-950 truncate">
                             {tx.type === "TRANSFER"

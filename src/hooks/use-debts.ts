@@ -7,6 +7,7 @@ export interface DebtPaymentWithAccount extends DebtPayment {
 }
 
 export interface DebtWithPayments extends Debt {
+  account?: Account | null;
   payments?: DebtPaymentWithAccount[];
 }
 
@@ -48,6 +49,10 @@ export function useDebts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 
@@ -64,6 +69,10 @@ export function useDebts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 

@@ -137,6 +137,7 @@ export const debtFormSchema = z.object({
   type: debtTypeSchema,
   personName: z.string().min(1, "Nama orang wajib diisi").max(100, "Nama maksimal 100 karakter"),
   amount: z.coerce.number().int("Nominal harus bilangan bulat").positive("Nominal harus lebih dari 0"),
+  accountId: z.string().uuid("Rekening tidak valid").optional().nullable(),
   dueDate: z.coerce.date().optional().nullable(),
   note: z.string().max(255, "Catatan maksimal 255 karakter").optional().nullable(),
 });

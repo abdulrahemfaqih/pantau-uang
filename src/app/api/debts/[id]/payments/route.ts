@@ -124,6 +124,7 @@ export async function POST(
               : `Pembayaran hutang ke ${targetDebt.personName}`,
             accountId: validated.accountId,
             categoryId: hutangCategory?.id || null,
+            excludeFromStats: true,
           });
         } else if (targetDebt.type === "LOAN") {
           // Piutang saya: orang lain membayar uang ke kita (INCOME)
@@ -172,6 +173,7 @@ export async function POST(
               : `Pelunasan piutang dari ${targetDebt.personName}`,
             accountId: validated.accountId,
             categoryId: piutangCategory?.id || null,
+            excludeFromStats: true,
           });
         }
       }

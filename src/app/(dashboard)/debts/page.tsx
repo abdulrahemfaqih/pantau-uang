@@ -207,9 +207,14 @@ export default function DebtsPage() {
                         </span>
                         <h2 className="font-bold text-zinc-950 text-sm">{item.personName}</h2>
                       </div>
-                      {item.note && (
-                        <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{item.note}</p>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-zinc-500">
+                        {item.account && (
+                          <span className="px-1.5 py-0.2 bg-zinc-100 text-zinc-700 rounded text-[10px] border border-zinc-200">
+                            {item.account.name}
+                          </span>
+                        )}
+                        {item.note && <span className="line-clamp-1">{item.note}</span>}
+                      </div>
                     </div>
 
                     <Badge
@@ -272,7 +277,11 @@ export default function DebtsPage() {
                       <div className="max-h-20 overflow-y-auto space-y-1 pr-1">
                         {item.payments.map((p) => (
                           <div key={p.id} className="flex justify-between tabular-nums text-[10px] text-zinc-600">
-                            <span>{format(new Date(p.date), "dd/MM/yy")} {p.note ? `• ${p.note}` : ""}</span>
+                            <span>
+                              {format(new Date(p.date), "dd/MM/yy")}{" "}
+                              {p.account ? `(${p.account.name})` : ""}{" "}
+                              {p.note ? `• ${p.note}` : ""}
+                            </span>
                             <span className="font-medium text-zinc-900">+{formatRupiah(Number(p.amount))}</span>
                           </div>
                         ))}

@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
           eq(transactions.userId, userId),
           gte(transactions.date, start),
           lte(transactions.date, end),
-          ne(transactions.type, "TRANSFER")
+          ne(transactions.type, "TRANSFER"),
+          eq(transactions.excludeFromStats, false)
         ),
         with: {
           category: true,
@@ -160,7 +161,8 @@ export async function GET(req: NextRequest) {
           eq(transactions.userId, userId),
           gte(transactions.date, start),
           lte(transactions.date, end),
-          ne(transactions.type, "TRANSFER")
+          ne(transactions.type, "TRANSFER"),
+          eq(transactions.excludeFromStats, false)
         ),
       });
 
@@ -241,7 +243,11 @@ export async function GET(req: NextRequest) {
     // 3. STATISTIK TAHUNAN (Yearly: Seluruh tahun transaksi)
     if (viewType === "yearly") {
       const txList = await db.query.transactions.findMany({
-        where: and(eq(transactions.userId, userId), ne(transactions.type, "TRANSFER")),
+        where: and(
+          eq(transactions.userId, userId),
+          ne(transactions.type, "TRANSFER"),
+          eq(transactions.excludeFromStats, false)
+        ),
       });
 
       const yearMap = new Map<

@@ -31,13 +31,14 @@ export async function GET(req: NextRequest) {
         .where(eq(accounts.userId, userId))
         .orderBy(desc(accounts.createdAt)),
 
-      // 2. Transaksi bulan ini (mengecualikan 'TRANSFER')
+      // 2. Transaksi bulan ini (mengecualikan 'TRANSFER' dan transaksi non-statistik)
       db.query.transactions.findMany({
         where: and(
           eq(transactions.userId, userId),
           gte(transactions.date, monthStart),
           lte(transactions.date, monthEnd),
-          ne(transactions.type, "TRANSFER")
+          ne(transactions.type, "TRANSFER"),
+          eq(transactions.excludeFromStats, false)
         ),
         with: {
           category: true,

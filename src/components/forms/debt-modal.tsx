@@ -4,6 +4,8 @@ import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { useAccounts } from "@/hooks/use-accounts";
 import { useDebts } from "@/hooks/use-debts";
 import { cn, formatRupiah, parseRupiahInput } from "@/lib/utils";
 import { DebtType } from "@/lib/validations";
@@ -14,12 +16,14 @@ interface DebtModalProps {
 }
 
 function DebtForm({ onClose }: { onClose: () => void }) {
+  const { data: accounts = [] } = useAccounts();
   const { createDebt, isCreating } = useDebts();
 
   const [type, setType] = React.useState<DebtType>("DEBT");
   const [personName, setPersonName] = React.useState("");
   const [displayAmount, setDisplayAmount] = React.useState("");
   const [amount, setAmount] = React.useState<number>(0);
+  const [accountId, setAccountId] = React.useState<string>("");
   const [dueDate, setDueDate] = React.useState<string>("");
   const [note, setNote] = React.useState<string>("");
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -50,6 +54,7 @@ function DebtForm({ onClose }: { onClose: () => void }) {
         type,
         personName: personName.trim(),
         amount,
+        accountId: accountId || undefined,
         dueDate: dueDate ? new Date(dueDate) : undefined,
         note: note.trim() || undefined,
       });
@@ -129,6 +134,28 @@ function DebtForm({ onClose }: { onClose: () => void }) {
             onChange={handleAmountChange}
             className="text-2xl sm:text-3xl font-semibold tabular-nums h-14 px-3 border-zinc-300 focus-visible:border-zinc-950"
           />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1">
+            {type === "DEBT" ? "Rekening Penerima (Opsional)" : "Rekening Sumber Dana (Opsional)"}
+          </label>
+          <Select
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+          >
+            <option value="">Hanya Catat (Tanpa Mengubah Saldo Rekening)</option>
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} (Saldo: {formatRupiah(Number(acc.currentBalance))})
+              </option>
+            ))}
+          </Select>
+          <p className="text-[11px] text-zinc-400 mt-1">
+            {type === "DEBT"
+              ? "Jika dipilih, saldo rekening akan bertambah. Mutasi ini tidak akan memengaruhi statistik laba/rugi."
+              : "Jika dipilih, saldo rekening akan terpotong. Mutasi ini tidak akan memengaruhi statistik laba/rugi."}
+          </p>
         </div>
 
         <div>
