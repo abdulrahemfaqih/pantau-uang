@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SavingsModal } from "@/components/forms/savings-modal";
 import { SavingsActionModal } from "@/components/forms/savings-action-modal";
+import { SavingsYieldModal } from "@/components/forms/savings-yield-modal";
 import { SavingsJoinModal } from "@/components/forms/savings-join-modal";
 import { formatRupiah, cn } from "@/lib/utils";
 import {
@@ -55,6 +56,9 @@ export default function SavingsPage() {
   const [actionType, setActionType] = React.useState<"DEPOSIT" | "WITHDRAW">("DEPOSIT");
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
 
+  const [yieldModalOpen, setYieldModalOpen] = React.useState(false);
+  const [yieldGoal, setYieldGoal] = React.useState<SavingsGoalWithDetails | null>(null);
+
   const [copiedCode, setCopiedCode] = React.useState<string | null>(null);
 
   const savings = data?.savings || [];
@@ -78,6 +82,11 @@ export default function SavingsPage() {
     setActiveGoal(goal);
     setActionType(type);
     setActionModalOpen(true);
+  };
+
+  const handleOpenYield = (goal: SavingsGoalWithDetails) => {
+    setYieldGoal(goal);
+    setYieldModalOpen(true);
   };
 
   const handleDelete = async (goal: SavingsGoalWithDetails) => {
@@ -258,7 +267,7 @@ export default function SavingsPage() {
                         <IconComp className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <h2 className="font-bold text-sm sm:text-base text-zinc-950 truncate">
                             {goal.name}
                           </h2>
@@ -272,7 +281,18 @@ export default function SavingsPage() {
                           >
                             {goal.isShared ? "Bersama" : "Mandiri"}
                           </span>
+                          {goal.hasYield && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold border shrink-0 bg-emerald-50 text-emerald-800 border-emerald-200 flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3" />
+                              <span>RDPU</span>
+                            </span>
+                          )}
                         </div>
+                        {goal.yieldNote && (
+                          <div className="text-[11px] text-zinc-500 font-medium truncate mt-0.5">
+                            {goal.yieldNote}
+                          </div>
+                        )}
                         {targetDateFormatted && (
                           <div className="flex items-center gap-1 text-[11px] text-zinc-400 mt-0.5">
                             <Calendar className="h-3 w-3" />
@@ -342,6 +362,24 @@ export default function SavingsPage() {
                     </div>
                   </div>
 
+                  {/* Stats Pokok vs Imbal Hasil jika Tabungan Berimbal Hasil */}
+                  {goal.hasYield && (
+                    <div className="p-2.5 bg-zinc-50 border border-zinc-200 rounded-md text-[11px] flex items-center justify-between tabular-nums">
+                      <div>
+                        <span className="text-zinc-400 block text-[10px]">Modal Pokok:</span>
+                        <span className="font-semibold text-zinc-900">
+                          {formatRupiah(Number(goal.principalAmount ?? currentAmt))}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-zinc-400 block text-[10px]">Total Imbal Hasil:</span>
+                        <span className="font-semibold text-emerald-700">
+                          +{formatRupiah(Number(goal.totalYieldEarned || 0))}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Shared Goal Member Breakdown */}
                   {goal.isShared && goal.members && goal.members.length > 0 && (
                     <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md space-y-2">
@@ -382,16 +420,24 @@ export default function SavingsPage() {
                         {goal.recentTransactions.slice(0, 2).map((tx) => (
                           <div key={tx.id} className="flex items-center justify-between tabular-nums text-zinc-600">
                             <span className="truncate">
-                              {tx.user?.name || "Anggota"}: {tx.type === "DEPOSIT" ? "Setor" : "Tarik"}
+                              {tx.user?.name || "Anggota"}:{" "}
+                              {tx.type === "DEPOSIT"
+                                ? "Setor"
+                                : tx.type === "WITHDRAW"
+                                ? "Tarik"
+                                : "Imbal Hasil"}
                               {tx.note ? ` (${tx.note})` : ""}
                             </span>
                             <span
                               className={cn(
                                 "font-semibold shrink-0 ml-2",
-                                tx.type === "DEPOSIT" ? "text-emerald-700" : "text-zinc-700"
+                                tx.type === "DEPOSIT" || tx.type === "YIELD"
+                                  ? "text-emerald-700"
+                                  : "text-zinc-700"
                               )}
                             >
-                              {tx.type === "DEPOSIT" ? "+" : "-"}{formatRupiah(Number(tx.amount))}
+                              {tx.type === "DEPOSIT" || tx.type === "YIELD" ? "+" : "-"}
+                              {formatRupiah(Number(tx.amount))}
                             </span>
                           </div>
                         ))}
@@ -411,6 +457,16 @@ export default function SavingsPage() {
                   </button>
 
                   <div className="flex items-center gap-2">
+                    {goal.hasYield && (
+                      <Button
+                        onClick={() => handleOpenYield(goal)}
+                        variant="outline"
+                        className="text-xs h-8 px-2.5 sm:px-3 text-emerald-700 border-emerald-300 hover:bg-emerald-50 shadow-none font-medium gap-1"
+                      >
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        <span>Update Nilai</span>
+                      </Button>
+                    )}
                     {goal.myContribution > 0 && (
                       <Button
                         onClick={() => handleOpenAction(goal, "WITHDRAW")}
@@ -438,6 +494,12 @@ export default function SavingsPage() {
 
       {/* Modals */}
       <SavingsModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
+
+      <SavingsYieldModal
+        open={yieldModalOpen}
+        onOpenChange={setYieldModalOpen}
+        goal={yieldGoal}
+      />
 
       <SavingsActionModal
         open={actionModalOpen}

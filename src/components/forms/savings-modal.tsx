@@ -41,6 +41,8 @@ function SavingsForm({ onClose }: { onClose: () => void }) {
   const { createGoal, isCreating } = useSavings();
 
   const [isShared, setIsShared] = React.useState(false);
+  const [hasYield, setHasYield] = React.useState(false);
+  const [yieldNote, setYieldNote] = React.useState("");
   const [name, setName] = React.useState("");
   const [displayTarget, setDisplayTarget] = React.useState("");
   const [targetAmount, setTargetAmount] = React.useState<number>(0);
@@ -95,6 +97,8 @@ function SavingsForm({ onClose }: { onClose: () => void }) {
         icon,
         color,
         isShared,
+        hasYield,
+        yieldNote: hasYield && yieldNote.trim() ? yieldNote.trim() : undefined,
         initialAmount: initialAmount > 0 ? initialAmount : undefined,
         initialAccountId: initialAmount > 0 && initialAccountId ? initialAccountId : undefined,
       });
@@ -209,6 +213,37 @@ function SavingsForm({ onClose }: { onClose: () => void }) {
                   </option>
                 ))}
               </Select>
+            </div>
+          )}
+        </div>
+
+        {/* Instrumen Imbal Hasil / RDPU */}
+        <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md space-y-3">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasYield}
+              onChange={(e) => setHasYield(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-zinc-950 focus:ring-zinc-950"
+            />
+            <div>
+              <span className="text-xs font-semibold text-zinc-950 block">Tabungan Berimbal Hasil (RDPU / Deposito)</span>
+              <span className="text-[11px] text-zinc-500 block">
+                Pilih jika tabungan ditempatkan pada instrumen investasi seperti RDPU atau deposito yang menghasilkan bunga berkala.
+              </span>
+            </div>
+          </label>
+
+          {hasYield && (
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1">Nama Platform / Reksa Dana (Opsional)</label>
+              <Input
+                type="text"
+                placeholder="Contoh: Bibit - Sucorinvest Sharia Money Market, Deposito Seabank"
+                value={yieldNote}
+                onChange={(e) => setYieldNote(e.target.value)}
+                className="h-9 bg-white"
+              />
             </div>
           )}
         </div>

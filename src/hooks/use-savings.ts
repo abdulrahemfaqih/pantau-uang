@@ -25,7 +25,10 @@ export interface SavingsTransactionWithDetails extends SavingsTransaction {
 
 export interface SavingsGoalWithDetails extends SavingsGoal {
   currentAmount: number;
+  principalAmount?: number;
   myContribution: number;
+  myPrincipal?: number;
+  myYield?: number;
   percentage: number;
   isOwner: boolean;
   membersCount: number;
@@ -121,7 +124,7 @@ export function useSavings() {
     }: {
       goalId: string;
       data: {
-        type: "DEPOSIT" | "WITHDRAW";
+        type: "DEPOSIT" | "WITHDRAW" | "YIELD";
         amount: number;
         accountId?: string | null;
         note?: string | null;

@@ -258,6 +258,9 @@ export const savingsGoals = pgTable(
     icon: varchar("icon", { length: 50 }).default("PiggyBank").notNull(),
     isShared: boolean("is_shared").default(false).notNull(),
     inviteCode: varchar("invite_code", { length: 20 }).unique(),
+    hasYield: boolean("has_yield").default(false).notNull(),
+    yieldNote: text("yield_note"),
+    totalYieldEarned: bigint("total_yield_earned", { mode: "number" }).default(0).notNull(),
     status: varchar("status", { length: 20 })
       .default("ACTIVE")
       .notNull()
@@ -321,7 +324,7 @@ export const savingsTransactions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    type: varchar("type", { length: 20 }).notNull().$type<"DEPOSIT" | "WITHDRAW">(),
+    type: varchar("type", { length: 20 }).notNull().$type<"DEPOSIT" | "WITHDRAW" | "YIELD">(),
     amount: bigint("amount", { mode: "number" }).notNull(),
     fromAccountId: uuid("from_account_id").references(() => accounts.id, { onDelete: "set null" }),
     toAccountId: uuid("to_account_id").references(() => accounts.id, { onDelete: "set null" }),

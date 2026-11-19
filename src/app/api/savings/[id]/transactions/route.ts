@@ -6,7 +6,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 const transactionBodySchema = z.object({
-  type: z.enum(["DEPOSIT", "WITHDRAW"]),
+  type: z.enum(["DEPOSIT", "WITHDRAW", "YIELD"]),
   amount: z.coerce.number().int().positive("Nominal harus lebih dari 0"),
   accountId: z.string().uuid("Rekening tidak valid").optional().nullable(),
   note: z.string().max(255).optional().nullable(),
@@ -172,6 +172,46 @@ export async function POST(
             categoryId: savingsCat?.id || null,
             excludeFromStats: true,
           });
+        } else if (validated.type === "YIELD") {
+          // Imbal hasil / bunga RDPU: saldo rekening bertambah
+          await tx
+            .update(accounts)
+            .set({
+              currentBalance: sql`${accounts.currentBalance} + ${validated.amount}`,
+            })
+            .where(eq(accounts.id, validated.accountId));
+
+          let [yieldCat] = await tx
+            .select()
+            .from(categories)
+            .where(and(eq(categories.userId, userId), eq(categories.name, "Imbal Hasil Tabungan")))
+            .limit(1);
+
+          if (!yieldCat) {
+            const [createdCat] = await tx
+              .insert(categories)
+              .values({
+                userId,
+                name: "Imbal Hasil Tabungan",
+                type: "INCOME",
+                color: "#059669",
+                icon: "TrendingUp",
+                isSystem: true,
+              })
+              .returning();
+            yieldCat = createdCat;
+          }
+
+          await tx.insert(transactions).values({
+            userId,
+            type: "INCOME",
+            amount: validated.amount,
+            date: validated.date,
+            note: validated.note ? `Imbal hasil ${goal.name}: ${validated.note}` : `Imbal hasil tabungan: ${goal.name}`,
+            accountId: validated.accountId,
+            categoryId: yieldCat?.id || null,
+            excludeFromStats: true,
+          });
         }
       }
 
@@ -184,18 +224,21 @@ export async function POST(
           type: validated.type,
           amount: validated.amount,
           fromAccountId: validated.type === "DEPOSIT" ? validated.accountId || null : null,
-          toAccountId: validated.type === "WITHDRAW" ? validated.accountId || null : null,
+          toAccountId: validated.type === "WITHDRAW" || validated.type === "YIELD" ? validated.accountId || null : null,
           note: validated.note || null,
           date: validated.date,
         })
         .returning();
 
-      // 6. Update currentAmount pada target tabungan
-      const amountDiff = validated.type === "DEPOSIT" ? validated.amount : -validated.amount;
+      // 6. Update currentAmount & totalYieldEarned pada target tabungan
+      const amountDiff = validated.type === "WITHDRAW" ? -validated.amount : validated.amount;
+      const yieldDiff = validated.type === "YIELD" ? validated.amount : 0;
+
       await tx
         .update(savingsGoals)
         .set({
           currentAmount: sql`GREATEST(0, ${savingsGoals.currentAmount} + ${amountDiff})`,
+          totalYieldEarned: sql`${savingsGoals.totalYieldEarned} + ${yieldDiff}`,
         })
         .where(eq(savingsGoals.id, id));
 

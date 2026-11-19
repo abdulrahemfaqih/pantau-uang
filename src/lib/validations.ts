@@ -219,6 +219,8 @@ export const savingsGoalFormSchema = z.object({
   color: z.string().default("#09090B"),
   icon: z.string().default("PiggyBank"),
   isShared: z.boolean().default(false),
+  hasYield: z.boolean().default(false),
+  yieldNote: z.string().max(100, "Keterangan instrumen maksimal 100 karakter").optional().nullable(),
   initialAmount: z.coerce
     .number()
     .int("Nominal setoran awal harus bilangan bulat")
@@ -253,6 +255,18 @@ export const savingsWithdrawFormSchema = z.object({
 });
 
 export type SavingsWithdrawFormValues = z.infer<typeof savingsWithdrawFormSchema>;
+
+export const savingsYieldFormSchema = z.object({
+  newPortfolioValue: z.coerce
+    .number()
+    .int("Nilai portofolio harus bilangan bulat")
+    .positive("Nilai portofolio harus lebih dari 0"),
+  accountId: z.string().uuid("Rekening tidak valid").optional().nullable(),
+  note: z.string().max(255, "Catatan maksimal 255 karakter").optional().nullable(),
+  date: z.coerce.date().default(() => new Date()),
+});
+
+export type SavingsYieldFormValues = z.infer<typeof savingsYieldFormSchema>;
 
 export const savingsJoinFormSchema = z.object({
   inviteCode: z

@@ -87,7 +87,10 @@ export async function GET() {
 
     const formattedGoals = goalsList.map((g) => {
       let totalSaved = 0;
+      let totalYield = 0;
+      let principalAmount = 0;
       let myContribution = 0;
+      let myYield = 0;
 
       // Hitung kontribusi per user
       const memberContributions = new Map<string, number>();
@@ -98,15 +101,25 @@ export async function GET() {
 
         if (tx.type === "DEPOSIT") {
           totalSaved += amt;
+          principalAmount += amt;
           memberContributions.set(tx.userId, currentMemberAmt + amt);
           if (tx.userId === userId) {
             myContribution += amt;
           }
         } else if (tx.type === "WITHDRAW") {
           totalSaved -= amt;
+          principalAmount -= amt;
           memberContributions.set(tx.userId, currentMemberAmt - amt);
           if (tx.userId === userId) {
             myContribution -= amt;
+          }
+        } else if (tx.type === "YIELD") {
+          totalSaved += amt;
+          totalYield += amt;
+          memberContributions.set(tx.userId, currentMemberAmt + amt);
+          if (tx.userId === userId) {
+            myContribution += amt;
+            myYield += amt;
           }
         }
       }
@@ -133,7 +146,10 @@ export async function GET() {
       return {
         ...g,
         currentAmount: totalSaved,
+        totalYieldEarned: totalYield,
+        principalAmount: Math.max(0, principalAmount),
         myContribution,
+        myYield,
         percentage,
         isOwner: g.userId === userId,
         membersCount: g.members.length,
@@ -181,6 +197,9 @@ export async function POST(req: NextRequest) {
           color: validated.color,
           icon: validated.icon,
           isShared: validated.isShared,
+          hasYield: validated.hasYield || false,
+          yieldNote: validated.yieldNote || null,
+          totalYieldEarned: 0,
           inviteCode,
           status: "ACTIVE",
         })

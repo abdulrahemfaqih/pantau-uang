@@ -73,7 +73,10 @@ export async function GET(
 
     // Hitung kontribusi per user
     let totalSaved = 0;
+    let totalYield = 0;
+    let principalAmount = 0;
     let myContribution = 0;
+    let myYield = 0;
     const memberContributions = new Map<string, number>();
 
     for (const tx of goal.transactions) {
@@ -82,15 +85,25 @@ export async function GET(
 
       if (tx.type === "DEPOSIT") {
         totalSaved += amt;
+        principalAmount += amt;
         memberContributions.set(tx.userId, currentMemberAmt + amt);
         if (tx.userId === userId) {
           myContribution += amt;
         }
       } else if (tx.type === "WITHDRAW") {
         totalSaved -= amt;
+        principalAmount -= amt;
         memberContributions.set(tx.userId, currentMemberAmt - amt);
         if (tx.userId === userId) {
           myContribution -= amt;
+        }
+      } else if (tx.type === "YIELD") {
+        totalSaved += amt;
+        totalYield += amt;
+        memberContributions.set(tx.userId, currentMemberAmt + amt);
+        if (tx.userId === userId) {
+          myContribution += amt;
+          myYield += amt;
         }
       }
     }
@@ -110,7 +123,10 @@ export async function GET(
     return NextResponse.json({
       ...goal,
       currentAmount: totalSaved,
+      totalYieldEarned: totalYield,
+      principalAmount: Math.max(0, principalAmount),
       myContribution,
+      myYield,
       percentage,
       isOwner: goal.userId === userId,
       role: membership.role,
