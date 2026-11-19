@@ -59,6 +59,15 @@ export function prefetchPageData(queryClient: QueryClient, href: string) {
           return res.json();
         },
       });
+    } else if (href === "/savings") {
+      queryClient.prefetchQuery({
+        queryKey: ["savings"],
+        queryFn: async () => {
+          const res = await fetch("/api/savings");
+          if (!res.ok) throw new Error("Prefetch failed");
+          return res.json();
+        },
+      });
     } else if (href === "/statistics") {
       const now = new Date();
       const month = now.getMonth() + 1;

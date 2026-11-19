@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, Repeat, HandCoins, HelpCircle, Bike, BarChart3 } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Landmark, Tags, Plus, Wallet, LogOut, Repeat, HandCoins, HelpCircle, Bike, BarChart3, PiggyBank } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
@@ -29,6 +29,7 @@ const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Transaksi", href: "/transactions", icon: ArrowLeftRight },
   { label: "Statistik", href: "/statistics", icon: BarChart3 },
+  { label: "Tabungan", href: "/savings", icon: PiggyBank },
   { label: "Rekening", href: "/accounts", icon: Landmark },
   { label: "Kategori", href: "/categories", icon: Tags },
   { label: "Berulang", href: "/recurring", icon: Repeat },

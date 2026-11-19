@@ -208,3 +208,58 @@ export const driverOrderApiSchema = z.preprocess((input) => {
   };
 }, driverOrderFormSchema);
 
+// Skema Tabungan (Savings Goals)
+export const savingsGoalFormSchema = z.object({
+  name: z.string().min(1, "Nama tabungan wajib diisi").max(100, "Nama tabungan maksimal 100 karakter"),
+  targetAmount: z.coerce
+    .number()
+    .int("Target nominal harus bilangan bulat")
+    .positive("Target nominal harus lebih dari 0"),
+  targetDate: z.coerce.date().optional().nullable(),
+  color: z.string().default("#09090B"),
+  icon: z.string().default("PiggyBank"),
+  isShared: z.boolean().default(false),
+  initialAmount: z.coerce
+    .number()
+    .int("Nominal setoran awal harus bilangan bulat")
+    .min(0, "Setoran awal minimal 0")
+    .default(0)
+    .optional(),
+  initialAccountId: z.string().uuid("Rekening tidak valid").optional().nullable(),
+});
+
+export type SavingsGoalFormValues = z.infer<typeof savingsGoalFormSchema>;
+
+export const savingsDepositFormSchema = z.object({
+  amount: z.coerce
+    .number()
+    .int("Nominal setoran harus bilangan bulat")
+    .positive("Nominal setoran harus lebih dari 0"),
+  fromAccountId: z.string().uuid("Rekening asal tidak valid").optional().nullable(),
+  note: z.string().max(255, "Catatan maksimal 255 karakter").optional().nullable(),
+  date: z.coerce.date().default(() => new Date()),
+});
+
+export type SavingsDepositFormValues = z.infer<typeof savingsDepositFormSchema>;
+
+export const savingsWithdrawFormSchema = z.object({
+  amount: z.coerce
+    .number()
+    .int("Nominal penarikan harus bilangan bulat")
+    .positive("Nominal penarikan harus lebih dari 0"),
+  toAccountId: z.string().uuid("Rekening tujuan tidak valid").optional().nullable(),
+  note: z.string().max(255, "Catatan maksimal 255 karakter").optional().nullable(),
+  date: z.coerce.date().default(() => new Date()),
+});
+
+export type SavingsWithdrawFormValues = z.infer<typeof savingsWithdrawFormSchema>;
+
+export const savingsJoinFormSchema = z.object({
+  inviteCode: z
+    .string()
+    .min(4, "Kode undangan minimal 4 karakter")
+    .max(20, "Kode undangan maksimal 20 karakter"),
+});
+
+export type SavingsJoinFormValues = z.infer<typeof savingsJoinFormSchema>;
+

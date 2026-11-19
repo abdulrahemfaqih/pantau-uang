@@ -65,6 +65,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   categories: many(categories),
   transactions: many(transactions),
+  savingsGoals: many(savingsGoals),
+  savingsMembers: many(savingsMembers),
+  savingsTransactions: many(savingsTransactions),
 }));
 
 export const accountsRelations = relations(accounts, ({ one, many }) => ({
@@ -74,6 +77,8 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
   }),
   transactions: many(transactions, { relationName: "accountTransactions" }),
   incomingTransfers: many(transactions, { relationName: "transferTargetAccount" }),
+  savingsFrom: many(savingsTransactions, { relationName: "savingsAccountFrom" }),
+  savingsTo: many(savingsTransactions, { relationName: "savingsAccountTo" }),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -237,6 +242,120 @@ export const debtPaymentsRelations = relations(debtPayments, ({ one }) => ({
   }),
 }));
 
+// 8. Tabel savings_goals (Target Tabungan)
+export const savingsGoals = pgTable(
+  "savings_goals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    targetAmount: bigint("target_amount", { mode: "number" }).notNull(),
+    currentAmount: bigint("current_amount", { mode: "number" }).default(0).notNull(),
+    targetDate: timestamp("target_date", { withTimezone: true }),
+    color: varchar("color", { length: 20 }).default("#09090B").notNull(),
+    icon: varchar("icon", { length: 50 }).default("PiggyBank").notNull(),
+    isShared: boolean("is_shared").default(false).notNull(),
+    inviteCode: varchar("invite_code", { length: 20 }).unique(),
+    status: varchar("status", { length: 20 })
+      .default("ACTIVE")
+      .notNull()
+      .$type<"ACTIVE" | "COMPLETED" | "CANCELLED">(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_savings_goals_user").on(table.userId),
+    index("idx_savings_goals_invite").on(table.inviteCode),
+  ]
+);
+
+export const savingsGoalsRelations = relations(savingsGoals, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [savingsGoals.userId],
+    references: [users.id],
+  }),
+  members: many(savingsMembers),
+  transactions: many(savingsTransactions),
+}));
+
+// 9. Tabel savings_members (Anggota Tabungan Bersama)
+export const savingsMembers = pgTable(
+  "savings_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    savingsGoalId: uuid("savings_goal_id")
+      .notNull()
+      .references(() => savingsGoals.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 20 }).default("MEMBER").notNull().$type<"OWNER" | "MEMBER">(),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_savings_members_goal").on(table.savingsGoalId),
+    index("idx_savings_members_user").on(table.userId),
+  ]
+);
+
+export const savingsMembersRelations = relations(savingsMembers, ({ one }) => ({
+  goal: one(savingsGoals, {
+    fields: [savingsMembers.savingsGoalId],
+    references: [savingsGoals.id],
+  }),
+  user: one(users, {
+    fields: [savingsMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+// 10. Tabel savings_transactions (Riwayat Setor & Tarik Tabungan)
+export const savingsTransactions = pgTable(
+  "savings_transactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    savingsGoalId: uuid("savings_goal_id")
+      .notNull()
+      .references(() => savingsGoals.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 20 }).notNull().$type<"DEPOSIT" | "WITHDRAW">(),
+    amount: bigint("amount", { mode: "number" }).notNull(),
+    fromAccountId: uuid("from_account_id").references(() => accounts.id, { onDelete: "set null" }),
+    toAccountId: uuid("to_account_id").references(() => accounts.id, { onDelete: "set null" }),
+    note: text("note"),
+    date: timestamp("date", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_savings_tx_goal").on(table.savingsGoalId),
+    index("idx_savings_tx_user").on(table.userId),
+  ]
+);
+
+export const savingsTransactionsRelations = relations(savingsTransactions, ({ one }) => ({
+  goal: one(savingsGoals, {
+    fields: [savingsTransactions.savingsGoalId],
+    references: [savingsGoals.id],
+  }),
+  user: one(users, {
+    fields: [savingsTransactions.userId],
+    references: [users.id],
+  }),
+  fromAccount: one(accounts, {
+    fields: [savingsTransactions.fromAccountId],
+    references: [accounts.id],
+    relationName: "savingsAccountFrom",
+  }),
+  toAccount: one(accounts, {
+    fields: [savingsTransactions.toAccountId],
+    references: [accounts.id],
+    relationName: "savingsAccountTo",
+  }),
+}));
+
 // Tipe Data TypeScript
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -258,3 +377,12 @@ export type NewDebt = typeof debts.$inferInsert;
 
 export type DebtPayment = typeof debtPayments.$inferSelect;
 export type NewDebtPayment = typeof debtPayments.$inferInsert;
+
+export type SavingsGoal = typeof savingsGoals.$inferSelect;
+export type NewSavingsGoal = typeof savingsGoals.$inferInsert;
+
+export type SavingsMember = typeof savingsMembers.$inferSelect;
+export type NewSavingsMember = typeof savingsMembers.$inferInsert;
+
+export type SavingsTransaction = typeof savingsTransactions.$inferSelect;
+export type NewSavingsTransaction = typeof savingsTransactions.$inferInsert;
