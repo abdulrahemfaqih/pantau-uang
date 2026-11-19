@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/current-user";
 import { db } from "@/db";
-import { savingsGoals, savingsMembers, savingsTransactions } from "@/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { accounts, savingsGoals, savingsMembers, savingsTransactions, transactions } from "@/db/schema";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
@@ -206,17 +206,101 @@ export async function DELETE(
       return NextResponse.json({ message: "Tabungan tidak ditemukan" }, { status: 404 });
     }
 
-    if (membership.role === "OWNER") {
-      // Hapus target tabungan seluruhnya (cascade akan menghapus members & transactions)
-      await db.delete(savingsGoals).where(eq(savingsGoals.id, id));
-      return NextResponse.json({ message: "Target tabungan berhasil dihapus" });
-    } else {
-      // Jika member biasa, keluar dari tabungan bersama
-      await db
-        .delete(savingsMembers)
-        .where(and(eq(savingsMembers.savingsGoalId, id), eq(savingsMembers.userId, userId)));
-      return NextResponse.json({ message: "Berhasil keluar dari tabungan bersama" });
-    }
+    await db.transaction(async (tx) => {
+      if (membership.role === "OWNER") {
+        // 1. Ambil info target tabungan
+        const [goal] = await tx
+          .select()
+          .from(savingsGoals)
+          .where(eq(savingsGoals.id, id))
+          .limit(1);
+
+        // 2. Ambil seluruh transaksi tabungan untuk merefund saldo rekening yang pernah dipotong
+        const txList = await tx
+          .select()
+          .from(savingsTransactions)
+          .where(eq(savingsTransactions.savingsGoalId, id));
+
+        for (const t of txList) {
+          const amt = Number(t.amount);
+          if (t.type === "DEPOSIT" && t.fromAccountId) {
+            // Refund uang setoran kembali ke rekening asal
+            await tx
+              .update(accounts)
+              .set({
+                currentBalance: sql`${accounts.currentBalance} + ${amt}`,
+              })
+              .where(eq(accounts.id, t.fromAccountId));
+          } else if (t.type === "WITHDRAW" && t.toAccountId) {
+            // Revert penarikan
+            await tx
+              .update(accounts)
+              .set({
+                currentBalance: sql`GREATEST(0, ${accounts.currentBalance} - ${amt})`,
+              })
+              .where(eq(accounts.id, t.toAccountId));
+          } else if (t.type === "YIELD" && t.toAccountId) {
+            // Revert imbal hasil yang pernah dikreditkan ke rekening
+            await tx
+              .update(accounts)
+              .set({
+                currentBalance: sql`GREATEST(0, ${accounts.currentBalance} - ${amt})`,
+              })
+              .where(eq(accounts.id, t.toAccountId));
+          }
+        }
+
+        // 3. Bersihkan mutasi transaksi sistem yang terkait tabungan ini
+        if (goal) {
+          await tx
+            .delete(transactions)
+            .where(
+              and(
+                eq(transactions.excludeFromStats, true),
+                sql`${transactions.note} LIKE ${`%${goal.name}%`}`
+              )
+            );
+        }
+
+        // 4. Hapus target tabungan (cascade akan menghapus savingsMembers & savingsTransactions)
+        await tx.delete(savingsGoals).where(eq(savingsGoals.id, id));
+      } else {
+        // Jika member biasa, refund kontribusi member ini dan keluarkan dari tabungan
+        const userTxList = await tx
+          .select()
+          .from(savingsTransactions)
+          .where(and(eq(savingsTransactions.savingsGoalId, id), eq(savingsTransactions.userId, userId)));
+
+        for (const t of userTxList) {
+          const amt = Number(t.amount);
+          if (t.type === "DEPOSIT" && t.fromAccountId) {
+            await tx
+              .update(accounts)
+              .set({
+                currentBalance: sql`${accounts.currentBalance} + ${amt}`,
+              })
+              .where(eq(accounts.id, t.fromAccountId));
+          } else if (t.type === "WITHDRAW" && t.toAccountId) {
+            await tx
+              .update(accounts)
+              .set({
+                currentBalance: sql`GREATEST(0, ${accounts.currentBalance} - ${amt})`,
+              })
+              .where(eq(accounts.id, t.toAccountId));
+          }
+        }
+
+        await tx
+          .delete(savingsTransactions)
+          .where(and(eq(savingsTransactions.savingsGoalId, id), eq(savingsTransactions.userId, userId)));
+
+        await tx
+          .delete(savingsMembers)
+          .where(and(eq(savingsMembers.savingsGoalId, id), eq(savingsMembers.userId, userId)));
+      }
+    });
+
+    return NextResponse.json({ message: "Tabungan berhasil dihapus dan saldo telah disinkronkan kembali" });
   } catch (error: unknown) {
     console.error("DELETE savings error:", error);
     return NextResponse.json({ message: "Gagal menghapus tabungan" }, { status: 500 });

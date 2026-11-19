@@ -200,19 +200,22 @@ function SavingsForm({ onClose }: { onClose: () => void }) {
 
           {initialAmount > 0 && (
             <div>
-              <label className="block text-xs font-medium text-zinc-700 mb-1">Rekening Sumber Setoran Awal</label>
+              <label className="block text-xs font-medium text-zinc-700 mb-1">Rekening Sumber Dana</label>
               <Select
                 value={initialAccountId}
                 onChange={(e) => setInitialAccountId(e.target.value)}
                 className="bg-white"
               >
-                <option value="">Tanpa Potong Saldo Rekening</option>
+                <option value="">Tanpa Potong Saldo Rekening (Uang Sudah di Tempat Simpan / Catat Visual)</option>
                 {accounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>
-                    {acc.name} (Saldo: {formatRupiah(Number(acc.currentBalance))})
+                    Potong dari {acc.name} (Saldo: {formatRupiah(Number(acc.currentBalance))})
                   </option>
                 ))}
               </Select>
+              <p className="text-[11px] text-zinc-500 mt-1">
+                Pilih "Tanpa Potong Saldo" jika uang sudah berada di rekening penampung Anda (misal di rekening RDPU) agar saldo rekening tidak terpotong dua kali.
+              </p>
             </div>
           )}
         </div>
