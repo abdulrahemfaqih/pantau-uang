@@ -16,7 +16,7 @@ import { useDriverMode } from "@/hooks/use-driver-mode";
 import { cn, formatRupiah } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Search, RotateCcw, Trash2, Pencil, Bike, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { Search, RotateCcw, Trash2, Pencil, Bike, ChevronLeft, ChevronRight, ChevronDown, Filter } from "lucide-react";
 
 export default function TransactionsPage() {
   const [currentDate, setCurrentDate] = React.useState<Date>(() => new Date());
@@ -32,6 +32,7 @@ export default function TransactionsPage() {
   const [editingTx, setEditingTx] = React.useState<TransactionWithDetails | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = React.useState(false);
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
 
   const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
@@ -222,6 +223,35 @@ export default function TransactionsPage() {
             {isAllTime ? "Filter Per Bulan" : "Tampilkan Semua"}
           </Button>
 
+          {/* Tombol Toggle Filter Mobile */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+            className={cn(
+              "h-8 text-xs flex items-center gap-1.5 border-zinc-200 shadow-none font-medium cursor-pointer md:hidden",
+              isFilterOpen || activeFiltersCount > 0
+                ? "bg-zinc-950 text-white hover:bg-zinc-800 border-zinc-950"
+                : "bg-white text-zinc-700 hover:bg-zinc-100"
+            )}
+          >
+            <Filter className="h-3.5 w-3.5" />
+            <span>Filter</span>
+            {activeFiltersCount > 0 && (
+              <span
+                className={cn(
+                  "px-1.5 py-0.5 text-[10px] rounded font-mono leading-none",
+                  isFilterOpen || activeFiltersCount > 0
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "bg-zinc-200 text-zinc-800"
+                )}
+              >
+                {activeFiltersCount}
+              </span>
+            )}
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", isFilterOpen && "rotate-180")} />
+          </Button>
+
           {isDriver && (
             <Button
               onClick={() => setIsDriverModalOpen(true)}
@@ -235,99 +265,101 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <Card className="p-4 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Search by note */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-            <Input
-              type="text"
-              placeholder="Cari catatan..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-9 text-xs"
-            />
-          </div>
+      {/* Filter Bar (Collapsible di Mobile, Selalu Terlihat di Desktop) */}
+      <div className={cn("transition-all duration-200", isFilterOpen ? "block" : "hidden md:block")}>
+        <Card className="p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Search by note */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+              <Input
+                type="text"
+                placeholder="Cari catatan..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-9 text-xs"
+              />
+            </div>
 
-          {/* Type dropdown */}
-          <Select
-            value={type}
-            onChange={(e) => setType(e.target.value as "INCOME" | "EXPENSE" | "TRANSFER" | "")}
-            wrapperClassName="w-auto min-w-[150px]"
-            className="h-9 text-xs"
-          >
-            <option value="">Semua Tipe Transaksi</option>
-            <option value="EXPENSE">Pengeluaran</option>
-            <option value="INCOME">Pemasukan</option>
-            <option value="TRANSFER">Transfer</option>
-          </Select>
-
-          {/* Account dropdown */}
-          <Select
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            wrapperClassName="w-auto min-w-[150px]"
-            className="h-9 text-xs"
-          >
-            <option value="">Semua Rekening</option>
-            {accounts.map((acc) => (
-              <option key={acc.id} value={acc.id}>
-                {acc.name}
-              </option>
-            ))}
-          </Select>
-
-          {/* Category dropdown */}
-          <Select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            wrapperClassName="w-auto min-w-[150px]"
-            className="h-9 text-xs"
-          >
-            <option value="">Semua Kategori</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name} ({cat.type === "INCOME" ? "Masuk" : "Keluar"})
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Second row of filters & reset */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-zinc-100">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500">Nominal:</span>
-            <Input
-              type="number"
-              placeholder="Min (Rp)"
-              value={minAmount}
-              onChange={(e) => setMinAmount(e.target.value)}
-              className="h-8 w-28 text-xs tabular-nums"
-            />
-            <span className="text-zinc-400 text-xs">-</span>
-            <Input
-              type="number"
-              placeholder="Maks (Rp)"
-              value={maxAmount}
-              onChange={(e) => setMaxAmount(e.target.value)}
-              className="h-8 w-28 text-xs tabular-nums"
-            />
-          </div>
-
-          {activeFiltersCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="h-8 text-xs flex items-center gap-1.5 text-zinc-600 hover:text-zinc-950"
+            {/* Type dropdown */}
+            <Select
+              value={type}
+              onChange={(e) => setType(e.target.value as "INCOME" | "EXPENSE" | "TRANSFER" | "")}
+              wrapperClassName="w-auto min-w-[150px]"
+              className="h-9 text-xs"
             >
-              <RotateCcw className="h-3 w-3" />
-              <span>Reset Filter ({activeFiltersCount})</span>
-            </Button>
-          )}
-        </div>
-      </Card>
+              <option value="">Semua Tipe Transaksi</option>
+              <option value="EXPENSE">Pengeluaran</option>
+              <option value="INCOME">Pemasukan</option>
+              <option value="TRANSFER">Transfer</option>
+            </Select>
+
+            {/* Account dropdown */}
+            <Select
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              wrapperClassName="w-auto min-w-[150px]"
+              className="h-9 text-xs"
+            >
+              <option value="">Semua Rekening</option>
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name}
+                </option>
+              ))}
+            </Select>
+
+            {/* Category dropdown */}
+            <Select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              wrapperClassName="w-auto min-w-[150px]"
+              className="h-9 text-xs"
+            >
+              <option value="">Semua Kategori</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name} ({cat.type === "INCOME" ? "Masuk" : "Keluar"})
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Second row of filters & reset */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-zinc-100">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Nominal:</span>
+              <Input
+                type="number"
+                placeholder="Min (Rp)"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                className="h-8 w-28 text-xs tabular-nums"
+              />
+              <span className="text-zinc-400 text-xs">-</span>
+              <Input
+                type="number"
+                placeholder="Maks (Rp)"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                className="h-8 w-28 text-xs tabular-nums"
+              />
+            </div>
+
+            {activeFiltersCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReset}
+                className="h-8 text-xs flex items-center gap-1.5 text-zinc-600 hover:text-zinc-950"
+              >
+                <RotateCcw className="h-3 w-3" />
+                <span>Reset Filter ({activeFiltersCount})</span>
+              </Button>
+            )}
+          </div>
+        </Card>
+      </div>
 
       {/* Summary Info Bar for active filter list */}
       {!isLoading && (
