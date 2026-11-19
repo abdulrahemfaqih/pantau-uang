@@ -129,6 +129,7 @@ export async function GET(
       myYield,
       percentage,
       isOwner: goal.userId === userId,
+      currentUserId: userId,
       role: membership.role,
       members: membersWithContribution,
     });

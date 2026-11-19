@@ -31,6 +31,14 @@ export interface SavingsGoalWithDetails extends SavingsGoal {
   myYield?: number;
   percentage: number;
   isOwner: boolean;
+  role?: string;
+  currentUserId?: string;
+  owner?: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  } | null;
   membersCount: number;
   members: SavingsMemberWithUser[];
   recentTransactions?: SavingsTransactionWithDetails[];
@@ -183,4 +191,20 @@ export function useSavings() {
     isJoining: joinGoalMutation.isPending,
   };
 }
+
+export function useSavingsDetail(id: string) {
+  return useQuery<SavingsGoalWithDetails>({
+    queryKey: ["savings", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/savings/${id}`);
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "Gagal memuat detail tabungan");
+      }
+      return res.json();
+    },
+    enabled: Boolean(id),
+  });
+}
+
 

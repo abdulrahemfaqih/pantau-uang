@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useSavings, SavingsGoalWithDetails } from "@/hooks/use-savings";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SavingsModal } from "@/components/forms/savings-modal";
 import { SavingsActionModal } from "@/components/forms/savings-action-modal";
-import { SavingsYieldModal } from "@/components/forms/savings-yield-modal";
 import { SavingsJoinModal } from "@/components/forms/savings-join-modal";
 import { formatRupiah, cn } from "@/lib/utils";
 import {
@@ -23,12 +23,11 @@ import {
   Gift,
   Users2,
   Calendar,
-  Trash2,
   Copy,
   Check,
-  ArrowDownLeft,
   ArrowUpRight,
   TrendingUp,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -46,7 +45,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 export default function SavingsPage() {
-  const { data, isLoading, deleteGoal } = useSavings();
+  const { data, isLoading } = useSavings();
 
   const [activeTab, setActiveTab] = React.useState<"ALL" | "INDIVIDUAL" | "SHARED">("ALL");
   const [createModalOpen, setCreateModalOpen] = React.useState(false);
@@ -55,9 +54,6 @@ export default function SavingsPage() {
   const [activeGoal, setActiveGoal] = React.useState<SavingsGoalWithDetails | null>(null);
   const [actionType, setActionType] = React.useState<"DEPOSIT" | "WITHDRAW">("DEPOSIT");
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
-
-  const [yieldModalOpen, setYieldModalOpen] = React.useState(false);
-  const [yieldGoal, setYieldGoal] = React.useState<SavingsGoalWithDetails | null>(null);
 
   const [copiedCode, setCopiedCode] = React.useState<string | null>(null);
 
@@ -82,21 +78,6 @@ export default function SavingsPage() {
     setActiveGoal(goal);
     setActionType(type);
     setActionModalOpen(true);
-  };
-
-  const handleOpenYield = (goal: SavingsGoalWithDetails) => {
-    setYieldGoal(goal);
-    setYieldModalOpen(true);
-  };
-
-  const handleDelete = async (goal: SavingsGoalWithDetails) => {
-    const confirmText = goal.isOwner
-      ? `Hapus target tabungan "${goal.name}"? Seluruh riwayat transaksi tabungan ini akan dihapus.`
-      : `Keluar dari tabungan bersama "${goal.name}"?`;
-
-    if (confirm(confirmText)) {
-      await deleteGoal(goal.id);
-    }
   };
 
   return (
@@ -254,12 +235,15 @@ export default function SavingsPage() {
             return (
               <Card
                 key={goal.id}
-                className="p-4 sm:p-5 border border-zinc-200 shadow-none flex flex-col justify-between space-y-4"
+                className="p-4 sm:p-5 border border-zinc-200 shadow-none flex flex-col justify-between space-y-4 hover:border-zinc-400 transition-colors"
               >
                 <div className="space-y-4">
                   {/* Top Bar: Icon, Name, Type Badge */}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <Link
+                      href={`/savings/${goal.id}`}
+                      className="flex items-center gap-3 min-w-0 group cursor-pointer"
+                    >
                       <div
                         className="h-10 w-10 rounded-md flex items-center justify-center text-white shrink-0"
                         style={{ backgroundColor: goal.color }}
@@ -268,7 +252,7 @@ export default function SavingsPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h2 className="font-bold text-sm sm:text-base text-zinc-950 truncate">
+                          <h2 className="font-bold text-sm sm:text-base text-zinc-950 group-hover:underline truncate">
                             {goal.name}
                           </h2>
                           <span
@@ -288,19 +272,22 @@ export default function SavingsPage() {
                             </span>
                           )}
                         </div>
-                        {goal.yieldNote && (
-                          <div className="text-[11px] text-zinc-500 font-medium truncate mt-0.5">
-                            {goal.yieldNote}
-                          </div>
-                        )}
-                        {targetDateFormatted && (
-                          <div className="flex items-center gap-1 text-[11px] text-zinc-400 mt-0.5">
-                            <Calendar className="h-3 w-3" />
-                            <span>Target: {targetDateFormatted}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-0.5 flex-wrap">
+                          {goal.isShared && (
+                            <span className="text-zinc-600 font-medium">
+                              {goal.membersCount} Anggota
+                            </span>
+                          )}
+                          {goal.isShared && targetDateFormatted && <span>•</span>}
+                          {targetDateFormatted && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>Target: {targetDateFormatted}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Invite Code Badge for Shared Goals */}
                     {goal.isShared && goal.inviteCode && (
@@ -360,131 +347,38 @@ export default function SavingsPage() {
                           : `Sisa ${formatRupiah(remainingAmt)}`}
                       </span>
                     </div>
-                  </div>
 
-                  {/* Stats Pokok vs Imbal Hasil jika Tabungan Berimbal Hasil */}
-                  {goal.hasYield && (
-                    <div className="p-2.5 bg-zinc-50 border border-zinc-200 rounded-md text-[11px] flex items-center justify-between tabular-nums">
-                      <div>
-                        <span className="text-zinc-400 block text-[10px]">Modal Pokok:</span>
-                        <span className="font-semibold text-zinc-900">
-                          {formatRupiah(Number(goal.principalAmount ?? currentAmt))}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-zinc-400 block text-[10px]">Total Imbal Hasil:</span>
+                    {/* Subtle Imbal Hasil footnote if hasYield */}
+                    {goal.hasYield && Number(goal.totalYieldEarned) > 0 && (
+                      <div className="text-[11px] text-zinc-500 pt-0.5 tabular-nums flex items-center gap-1">
+                        <span>Total Imbal Hasil:</span>
                         <span className="font-semibold text-emerald-700">
-                          +{formatRupiah(Number(goal.totalYieldEarned || 0))}
+                          +{formatRupiah(Number(goal.totalYieldEarned))}
                         </span>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Shared Goal Member Breakdown */}
-                  {goal.isShared && goal.members && goal.members.length > 0 && (
-                    <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md space-y-2">
-                      <div className="flex items-center justify-between text-[11px] font-medium text-zinc-700">
-                        <span>Kontribusi Anggota ({goal.membersCount}):</span>
-                        <span className="text-zinc-500 text-[10px]">Uang di rekening masing-masing</span>
-                      </div>
-                      <div className="space-y-1.5">
-                        {goal.members.map((m) => (
-                          <div key={m.id} className="flex items-center justify-between text-[11px] tabular-nums">
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="font-medium text-zinc-950 truncate">
-                                {m.user?.name || "Pengguna"}
-                              </span>
-                              {m.role === "OWNER" && (
-                                <span className="px-1 text-[9px] bg-zinc-200 text-zinc-700 rounded font-normal shrink-0">
-                                  Owner
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0 text-zinc-700">
-                              <span className="font-semibold">{formatRupiah(m.contributionAmount)}</span>
-                              <span className="text-[10px] text-zinc-400">({m.contributionPercentage}%)</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Recent Activity Feed */}
-                  {goal.recentTransactions && goal.recentTransactions.length > 0 && (
-                    <div className="space-y-1 pt-1 border-t border-zinc-100">
-                      <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">
-                        Aktivitas Terbaru
-                      </span>
-                      <div className="space-y-1 text-[11px]">
-                        {goal.recentTransactions.slice(0, 2).map((tx) => (
-                          <div key={tx.id} className="flex items-center justify-between tabular-nums text-zinc-600">
-                            <span className="truncate">
-                              {tx.user?.name || "Anggota"}:{" "}
-                              {tx.type === "DEPOSIT"
-                                ? "Setor"
-                                : tx.type === "WITHDRAW"
-                                ? "Tarik"
-                                : "Imbal Hasil"}
-                              {tx.note ? ` (${tx.note})` : ""}
-                            </span>
-                            <span
-                              className={cn(
-                                "font-semibold shrink-0 ml-2",
-                                tx.type === "DEPOSIT" || tx.type === "YIELD"
-                                  ? "text-emerald-700"
-                                  : "text-zinc-700"
-                              )}
-                            >
-                              {tx.type === "DEPOSIT" || tx.type === "YIELD" ? "+" : "-"}
-                              {formatRupiah(Number(tx.amount))}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Action Buttons Footer */}
                 <div className="pt-3 border-t border-zinc-100 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleDelete(goal)}
-                    className="p-2 rounded text-zinc-400 hover:text-red-700 transition-colors cursor-pointer"
-                    title={goal.isOwner ? "Hapus tabungan" : "Keluar dari tabungan"}
+                  <Button
+                    onClick={() => handleOpenAction(goal, "DEPOSIT")}
+                    variant="outline"
+                    className="text-xs h-8 px-3 text-zinc-800 border-zinc-300 hover:bg-zinc-100 shadow-none font-medium gap-1"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    <span>Setor</span>
+                  </Button>
 
-                  <div className="flex items-center gap-2">
-                    {goal.hasYield && (
-                      <Button
-                        onClick={() => handleOpenYield(goal)}
-                        variant="outline"
-                        className="text-xs h-8 px-2.5 sm:px-3 text-emerald-700 border-emerald-300 hover:bg-emerald-50 shadow-none font-medium gap-1"
-                      >
-                        <TrendingUp className="h-3.5 w-3.5" />
-                        <span>Update Nilai</span>
-                      </Button>
-                    )}
-                    {goal.myContribution > 0 && (
-                      <Button
-                        onClick={() => handleOpenAction(goal, "WITHDRAW")}
-                        variant="outline"
-                        className="text-xs h-8 px-3 text-zinc-950 border-zinc-300 hover:bg-zinc-100 shadow-none font-medium gap-1"
-                      >
-                        <ArrowDownLeft className="h-3.5 w-3.5 text-zinc-600" />
-                        <span>Tarik</span>
-                      </Button>
-                    )}
+                  <Link href={`/savings/${goal.id}`}>
                     <Button
-                      onClick={() => handleOpenAction(goal, "DEPOSIT")}
-                      className="text-xs h-8 px-3 bg-zinc-950 text-white hover:bg-zinc-800 shadow-none font-medium gap-1"
+                      className="text-xs h-8 px-3 bg-zinc-950 text-white hover:bg-zinc-800 shadow-none font-medium gap-1 cursor-pointer"
                     >
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                      <span>Setor Dana</span>
+                      <span>Lihat Detail</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </Button>
-                  </div>
+                  </Link>
                 </div>
               </Card>
             );
@@ -494,12 +388,6 @@ export default function SavingsPage() {
 
       {/* Modals */}
       <SavingsModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
-
-      <SavingsYieldModal
-        open={yieldModalOpen}
-        onOpenChange={setYieldModalOpen}
-        goal={yieldGoal}
-      />
 
       <SavingsActionModal
         open={actionModalOpen}
